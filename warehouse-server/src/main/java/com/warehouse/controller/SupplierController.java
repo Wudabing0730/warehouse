@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.warehouse.annotation.RequirePermission;
 import com.warehouse.common.Result;
 import com.warehouse.dto.request.SupplierCreateDTO;
+import com.warehouse.dto.request.SupplierQueryDTO;
 import com.warehouse.dto.request.SupplierUpdateDTO;
 import com.warehouse.dto.response.SupplierVO;
 import com.warehouse.entity.Supplier;
@@ -28,8 +29,9 @@ public class SupplierController {
     @GetMapping
     @Operation(summary = "List suppliers", description = "Paginated query of suppliers")
     public Result<IPage<SupplierVO>> list(@RequestParam(defaultValue = "1") Integer page,
-                                           @RequestParam(defaultValue = "10") Integer size) {
-        IPage<SupplierVO> result = supplierService.page(new Page<>(page, size));
+                                           @RequestParam(defaultValue = "10") Integer size,
+                                           SupplierQueryDTO query) {
+        IPage<SupplierVO> result = supplierService.page(new Page<>(page, size), query);
         return Result.success(result);
     }
 

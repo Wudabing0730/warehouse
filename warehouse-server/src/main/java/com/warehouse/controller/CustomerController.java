@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.warehouse.annotation.RequirePermission;
 import com.warehouse.common.Result;
 import com.warehouse.dto.request.CustomerCreateDTO;
+import com.warehouse.dto.request.CustomerQueryDTO;
 import com.warehouse.dto.request.CustomerUpdateDTO;
 import com.warehouse.dto.response.CustomerVO;
 import com.warehouse.entity.Customer;
@@ -28,8 +29,9 @@ public class CustomerController {
     @GetMapping
     @Operation(summary = "List customers", description = "Paginated query of customers")
     public Result<IPage<CustomerVO>> list(@RequestParam(defaultValue = "1") Integer page,
-                                           @RequestParam(defaultValue = "10") Integer size) {
-        IPage<CustomerVO> result = customerService.page(new Page<>(page, size));
+                                           @RequestParam(defaultValue = "10") Integer size,
+                                           CustomerQueryDTO query) {
+        IPage<CustomerVO> result = customerService.page(new Page<>(page, size), query);
         return Result.success(result);
     }
 

@@ -49,8 +49,8 @@
       </el-table>
 
       <el-pagination
-        v-model:current-page="pagination.pageNum"
-        v-model:page-size="pagination.pageSize"
+        v-model:current-page="pagination.page"
+        v-model:page-size="pagination.size"
         :page-sizes="[10, 20, 50, 100]"
         :total="pagination.total"
         layout="total, sizes, prev, pager, next, jumper"
@@ -139,14 +139,14 @@ const searchForm = reactive({
 // ---- Table ----
 const loading = ref(false)
 const tableData = ref<any[]>([])
-const pagination = reactive({ pageNum: 1, pageSize: 10, total: 0 })
+const pagination = reactive({ page: 1, size: 10, total: 0 })
 
 const fetchList = async () => {
   loading.value = true
   try {
     const params: Record<string, any> = {
-      pageNum: pagination.pageNum,
-      pageSize: pagination.pageSize,
+      page: pagination.page,
+      size: pagination.size,
     }
     if (searchForm.customerCode) params.customerCode = searchForm.customerCode
     if (searchForm.customerName) params.customerName = searchForm.customerName
@@ -162,7 +162,7 @@ const fetchList = async () => {
 }
 
 const handleSearch = () => {
-  pagination.pageNum = 1
+  pagination.page = 1
   fetchList()
 }
 

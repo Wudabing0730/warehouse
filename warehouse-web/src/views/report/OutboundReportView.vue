@@ -61,8 +61,8 @@
 
       <div class="pagination-wrap">
         <el-pagination
-          v-model:current-page="pagination.pageNo"
-          v-model:page-size="pagination.pageSize"
+          v-model:current-page="pagination.page"
+          v-model:page-size="pagination.size"
           :total="pagination.total"
           :page-sizes="[10, 20, 50]"
           layout="total, sizes, prev, pager, next"
@@ -103,12 +103,12 @@ interface OutboundRecord {
 
 const tableData = ref<OutboundRecord[]>([])
 const loading = ref(false)
-const pagination = reactive({ pageNo: 1, pageSize: 10, total: 0 })
+const pagination = reactive({ page: 1, size: 10, total: 0 })
 
 function buildParams(): Record<string, unknown> {
   const params: Record<string, unknown> = {
-    pageNo: pagination.pageNo,
-    pageSize: pagination.pageSize,
+    page: pagination.page,
+    size: pagination.size,
   }
   if (filterForm.dateRange && filterForm.dateRange.length === 2) {
     params.startDate = filterForm.dateRange[0]
@@ -138,7 +138,7 @@ async function fetchData() {
 }
 
 function handleSearch() {
-  pagination.pageNo = 1
+  pagination.page = 1
   fetchData()
 }
 

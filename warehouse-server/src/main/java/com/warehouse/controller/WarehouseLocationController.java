@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.warehouse.annotation.RequirePermission;
 import com.warehouse.common.Result;
 import com.warehouse.dto.request.LocationCreateDTO;
+import com.warehouse.dto.request.LocationQueryDTO;
 import com.warehouse.dto.request.LocationUpdateDTO;
 import com.warehouse.dto.response.LocationVO;
 import com.warehouse.entity.WarehouseLocation;
@@ -28,8 +29,9 @@ public class WarehouseLocationController {
     @GetMapping
     @Operation(summary = "List locations", description = "Paginated query of warehouse locations")
     public Result<IPage<LocationVO>> list(@RequestParam(defaultValue = "1") Integer page,
-                                           @RequestParam(defaultValue = "10") Integer size) {
-        IPage<LocationVO> result = warehouseLocationService.page(new Page<>(page, size));
+                                           @RequestParam(defaultValue = "10") Integer size,
+                                           LocationQueryDTO query) {
+        IPage<LocationVO> result = warehouseLocationService.page(new Page<>(page, size), query);
         return Result.success(result);
     }
 

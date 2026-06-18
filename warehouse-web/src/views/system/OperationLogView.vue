@@ -112,7 +112,7 @@
       <div class="pagination-wrapper">
         <el-pagination
           v-model:current-page="pagination.page"
-          v-model:page-size="pagination.pageSize"
+          v-model:page-size="pagination.size"
           :page-sizes="[10, 20, 50, 100]"
           :total="pagination.total"
           layout="total, sizes, prev, pager, next, jumper"
@@ -159,7 +159,7 @@ const tableData = ref<LogEntry[]>([])
 const loading = ref(false)
 const pagination = reactive({
   page: 1,
-  pageSize: 10,
+  size: 10,
   total: 0,
 })
 
@@ -168,7 +168,7 @@ async function fetchData() {
   try {
     const params: Record<string, unknown> = {
       page: pagination.page,
-      pageSize: pagination.pageSize,
+      size: pagination.size,
     }
     if (searchForm.userId) params.userId = searchForm.userId
     if (searchForm.module) params.module = searchForm.module

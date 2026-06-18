@@ -97,7 +97,7 @@ const productOptions = ref<ProductOption[]>([])
 
 async function fetchProducts() {
   try {
-    const res = await getProductList({ pageNo: 1, pageSize: 9999 })
+    const res = await getProductList({ page: 1, size: 9999 })
     productOptions.value = (res.data?.records ?? res.data ?? []) as ProductOption[]
   } catch {
     // ignore
@@ -131,7 +131,7 @@ async function onProductChange(productId: number | string) {
     return
   }
   try {
-    const res = await getStockList({ productId, pageNo: 1, pageSize: 1 })
+    const res = await getStockList({ productId, page: 1, size: 1 })
     const records = (res.data?.records ?? res.data ?? []) as any[]
     if (records.length > 0) {
       stockInfo.quantity = records[0].quantity ?? 0
@@ -200,7 +200,7 @@ const recentLoading = ref(false)
 async function fetchRecentChecks() {
   recentLoading.value = true
   try {
-    const res = await getCheckList({ pageNo: 1, pageSize: 10 })
+    const res = await getCheckList({ page: 1, size: 10 })
     const data = res.data
     recentChecks.value = ((data.records ?? data ?? []) as CheckRecord[])
   } catch {

@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.warehouse.dto.request.OperationLogQueryDTO;
+import com.warehouse.dto.response.OperationLogVO;
 import com.warehouse.entity.OperationLog;
 import com.warehouse.mapper.OperationLogMapper;
 import com.warehouse.service.OperationLogService;
@@ -36,5 +37,28 @@ public class OperationLogServiceImpl extends ServiceImpl<OperationLogMapper, Ope
     @Override
     public void saveAsync(OperationLog log) {
         save(log);
+    }
+
+    @Override
+    public IPage<OperationLogVO> pageVO(Page<OperationLog> page, OperationLogQueryDTO query) {
+        IPage<OperationLog> entityPage = this.page(page, query);
+        return entityPage.convert(log -> {
+            OperationLogVO vo = new OperationLogVO();
+            vo.setLogId(log.getLogId());
+            vo.setUserId(log.getUserId());
+            vo.setUsername(log.getUsername());
+            vo.setOperation(log.getOperation());
+            vo.setModule(log.getModule());
+            vo.setRequestMethod(log.getRequestMethod());
+            vo.setRequestUrl(log.getRequestUrl());
+            vo.setRequestParams(log.getRequestParams());
+            vo.setResponseResult(log.getResponseResult());
+            vo.setExecutionTime(log.getExecutionTime());
+            vo.setIpAddress(log.getIpAddress());
+            vo.setUserAgent(log.getUserAgent());
+            vo.setStatus(log.getStatus());
+            vo.setOperateTime(log.getOperateTime());
+            return vo;
+        });
     }
 }

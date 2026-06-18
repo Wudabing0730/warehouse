@@ -187,6 +187,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
+    @Transactional
+    public void resetPassword(Long userId, String newPassword) {
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(404, "用户不存在");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userMapper.updateById(user);
+        // 密码被管理员重置后,失效其 refresh token 缓存,强制重新登录
+        try {
+            stringRedisTemplate.delete("user:permissions:" + userId);
+        } catch (Exception ignored) { }
+    }
+
+    @Override
     public Set<String> getPermissionCodes(Long userId) {
         String cacheKey = "user:permissions:" + userId;
 

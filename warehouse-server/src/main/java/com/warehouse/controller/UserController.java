@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.warehouse.annotation.RequirePermission;
 import com.warehouse.common.Result;
+import com.warehouse.dto.request.PasswordResetDTO;
 import com.warehouse.dto.request.UserCreateDTO;
 import com.warehouse.dto.request.UserQueryDTO;
 import com.warehouse.dto.request.UserUpdateDTO;
@@ -71,6 +72,18 @@ public class UserController {
         String oldPassword = passwords.get("oldPassword");
         String newPassword = passwords.get("newPassword");
         userService.updatePassword(id, oldPassword, newPassword);
+        return Result.success();
+    }
+
+    /**
+     * 管理员重置用户密码(P1-5)
+     * 不需要 oldPassword,只需 newPassword
+     */
+    @PutMapping("/{id}/password/reset")
+    @RequirePermission("system:user:resetPassword")
+    @Operation(summary = "Reset user password (admin)", description = "Admin resets a user's password without old password verification")
+    public Result<Void> resetPassword(@PathVariable Long id, @Valid @RequestBody PasswordResetDTO dto) {
+        userService.resetPassword(id, dto.getNewPassword());
         return Result.success();
     }
 }

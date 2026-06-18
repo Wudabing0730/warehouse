@@ -246,7 +246,7 @@ onMounted(async () => {
 
 async function loadCustomers() {
   try {
-    const res = await getCustomerList({ pageSize: 999 })
+    const res = await getCustomerList({ size: 999 })
     customerList.value = res.data?.records ?? res.data ?? []
   } catch {
     // handled by interceptor
@@ -256,7 +256,7 @@ async function loadCustomers() {
 async function loadProducts() {
   productLoading.value = true
   try {
-    const res = await getProductList({ pageSize: 999 })
+    const res = await getProductList({ size: 999 })
     productList.value = res.data?.records ?? res.data ?? []
   } finally {
     productLoading.value = false

@@ -22,6 +22,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -42,6 +43,24 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
 
         IPage<Role> rolePage = baseMapper.selectPage(page, wrapper);
 
+        // 批量预取所有相关 role 的 permissionIds,避免 N+1
+        List<Role> roles = rolePage.getRecords();
+        if (!roles.isEmpty()) {
+            List<Long> roleIds = roles.stream().map(Role::getRoleId).collect(Collectors.toList());
+            List<RolePermission> allMappings = rolePermissionMapper.selectList(
+                    new LambdaQueryWrapper<RolePermission>().in(RolePermission::getRoleId, roleIds)
+            );
+            Map<Long, List<Long>> rolePermMap = allMappings.stream()
+                    .collect(Collectors.groupingBy(
+                            RolePermission::getRoleId,
+                            Collectors.mapping(RolePermission::getPermissionId, Collectors.toList())
+                    ));
+            return rolePage.convert(role -> {
+                RoleVO vo = toRoleVO(role);
+                vo.setPermissionIds(rolePermMap.getOrDefault(role.getRoleId(), new ArrayList<>()));
+                return vo;
+            });
+        }
         return rolePage.convert(this::toRoleVO);
     }
 

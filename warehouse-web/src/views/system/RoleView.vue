@@ -36,6 +36,13 @@
         <el-table-column prop="id" label="ID" width="80" align="center" />
         <el-table-column prop="roleName" label="角色名称" width="150" />
         <el-table-column prop="roleDesc" label="角色描述" min-width="200" show-overflow-tooltip />
+        <el-table-column label="权限数" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag :type="row.permissionIds?.length ? 'success' : 'info'" size="small">
+              {{ row.permissionIds?.length ?? 0 }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="状态" width="100" align="center">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'danger'" size="small">
@@ -56,7 +63,7 @@
       <div class="pagination-wrapper">
         <el-pagination
           v-model:current-page="pagination.page"
-          v-model:page-size="pagination.pageSize"
+          v-model:page-size="pagination.size"
           :page-sizes="[10, 20, 50, 100]"
           :total="pagination.total"
           layout="total, sizes, prev, pager, next, jumper"
@@ -153,7 +160,7 @@ const tableData = ref<Role[]>([])
 const loading = ref(false)
 const pagination = reactive({
   page: 1,
-  pageSize: 10,
+  size: 10,
   total: 0,
 })
 
@@ -162,7 +169,7 @@ async function fetchData() {
   try {
     const params: Record<string, unknown> = {
       page: pagination.page,
-      pageSize: pagination.pageSize,
+      size: pagination.size,
     }
     if (searchForm.roleName) params.roleName = searchForm.roleName
     if (searchForm.status !== null) params.status = searchForm.status

@@ -184,7 +184,7 @@ async function fetchAllData() {
   // Recent inbound
   inboundLoading.value = true
   try {
-    const res = await getInboundReport({ ...dateParams, pageNo: 1, pageSize: 5 })
+    const res = await getInboundReport({ ...dateParams, page: 1, size: 5 })
     recentInbound.value = (res.data?.records ?? res.data ?? []) as RecentRecord[]
   } catch {
     recentInbound.value = []
@@ -195,7 +195,7 @@ async function fetchAllData() {
   // Recent outbound
   outboundLoading.value = true
   try {
-    const res = await getOutboundReport({ ...dateParams, pageNo: 1, pageSize: 5 })
+    const res = await getOutboundReport({ ...dateParams, page: 1, size: 5 })
     recentOutbound.value = (res.data?.records ?? res.data ?? []) as RecentRecord[]
   } catch {
     recentOutbound.value = []
@@ -206,7 +206,7 @@ async function fetchAllData() {
   // Stock overview
   stockLoading.value = true
   try {
-    const res = await getStockReport({ pageNo: 1, pageSize: 50 })
+    const res = await getStockReport({ page: 1, size: 50 })
     stockOverview.value = (res.data?.records ?? res.data ?? []) as StockRecord[]
 
     // If summary wasn't set by comprehensive, derive from stock

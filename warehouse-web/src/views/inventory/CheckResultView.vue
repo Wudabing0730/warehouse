@@ -85,8 +85,8 @@
 
       <div class="pagination-wrap">
         <el-pagination
-          v-model:current-page="pagination.pageNo"
-          v-model:page-size="pagination.pageSize"
+          v-model:current-page="pagination.page"
+          v-model:page-size="pagination.size"
           :total="pagination.total"
           :page-sizes="[10, 20, 50]"
           layout="total, sizes, prev, pager, next"
@@ -153,7 +153,7 @@ const productOptions = ref<ProductOption[]>([])
 
 async function fetchProducts() {
   try {
-    const res = await getProductList({ pageNo: 1, pageSize: 9999 })
+    const res = await getProductList({ page: 1, size: 9999 })
     productOptions.value = (res.data?.records ?? res.data ?? []) as ProductOption[]
   } catch {
     // ignore
@@ -178,12 +178,12 @@ interface CheckRecord {
 
 const tableData = ref<CheckRecord[]>([])
 const loading = ref(false)
-const pagination = reactive({ pageNo: 1, pageSize: 10, total: 0 })
+const pagination = reactive({ page: 1, size: 10, total: 0 })
 
 function buildParams(): Record<string, unknown> {
   const params: Record<string, unknown> = {
-    pageNo: pagination.pageNo,
-    pageSize: pagination.pageSize,
+    page: pagination.page,
+    size: pagination.size,
   }
   if (searchForm.checkNo) params.checkNo = searchForm.checkNo
   if (searchForm.productId) params.productId = searchForm.productId
@@ -210,7 +210,7 @@ async function fetchList() {
 }
 
 function handleSearch() {
-  pagination.pageNo = 1
+  pagination.page = 1
   fetchList()
 }
 
@@ -219,7 +219,7 @@ function handleReset() {
   searchForm.productId = ''
   searchForm.status = ''
   searchForm.dateRange = []
-  pagination.pageNo = 1
+  pagination.page = 1
   fetchList()
 }
 

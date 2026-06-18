@@ -25,5 +25,10 @@ public interface UserService extends IService<User> {
 
     void updatePassword(Long userId, String oldPassword, String newPassword);
 
+    /**
+     * 管理员重置用户密码(P1-5),无需 oldPassword。
+     */
+    void resetPassword(Long userId, String newPassword);
+
     Set<String> getPermissionCodes(Long userId);
 }

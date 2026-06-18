@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.warehouse.common.BusinessException;
 import com.warehouse.dto.request.LocationCreateDTO;
+import com.warehouse.dto.request.LocationQueryDTO;
 import com.warehouse.dto.request.LocationUpdateDTO;
 import com.warehouse.dto.response.LocationVO;
 import com.warehouse.entity.Product;
@@ -29,8 +30,22 @@ public class WarehouseLocationServiceImpl extends ServiceImpl<WarehouseLocationM
     private ProductMapper productMapper;
 
     @Override
-    public IPage<LocationVO> page(Page<WarehouseLocation> page) {
+    public IPage<LocationVO> page(Page<WarehouseLocation> page, LocationQueryDTO query) {
         QueryWrapper<WarehouseLocation> wrapper = new QueryWrapper<>();
+        if (query != null) {
+            if (query.getLocationCode() != null && !query.getLocationCode().isEmpty()) {
+                wrapper.like("location_code", query.getLocationCode());
+            }
+            if (query.getLocationName() != null && !query.getLocationName().isEmpty()) {
+                wrapper.like("location_name", query.getLocationName());
+            }
+            if (query.getZone() != null && !query.getZone().isEmpty()) {
+                wrapper.like("zone", query.getZone());
+            }
+            if (query.getStatus() != null) {
+                wrapper.eq("status", query.getStatus());
+            }
+        }
         wrapper.orderByDesc("create_time");
         // MyBatis-Plus 3.5.9 分页拦截器在 mybatis-plus-jsqlparser 模块中未引入，
         // 需手动设置 LIMIT 并查询总数

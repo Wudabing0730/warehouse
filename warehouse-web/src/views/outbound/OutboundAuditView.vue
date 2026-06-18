@@ -77,7 +77,7 @@
       <div class="pagination-wrap">
         <el-pagination
           v-model:current-page="pagination.page"
-          v-model:page-size="pagination.pageSize"
+          v-model:page-size="pagination.size"
           :total="pagination.total"
           :page-sizes="[10, 20, 50]"
           layout="total, sizes, prev, pager, next"
@@ -167,7 +167,7 @@ const searchForm = reactive({
   dateRange: null as [string, string] | null,
 })
 
-const pagination = reactive({ page: 1, pageSize: 10, total: 0 })
+const pagination = reactive({ page: 1, size: 10, total: 0 })
 const tableData = ref<any[]>([])
 
 function statusTagType(status: number): 'warning' | 'success' | 'danger' | 'info' {
@@ -191,7 +191,7 @@ onMounted(() => {
 
 async function loadCustomers() {
   try {
-    const res = await getCustomerList({ pageSize: 999 })
+    const res = await getCustomerList({ size: 999 })
     customerList.value = res.data?.records ?? res.data ?? []
   } catch {
     // handled by interceptor
@@ -203,7 +203,7 @@ async function fetchData() {
   try {
     const params: any = {
       page: pagination.page,
-      pageSize: pagination.pageSize,
+      size: pagination.size,
     }
     if (searchForm.orderNo) params.orderNo = searchForm.orderNo
     if (searchForm.customerId) params.customerId = searchForm.customerId

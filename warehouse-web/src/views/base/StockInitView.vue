@@ -52,8 +52,8 @@
       </el-table>
 
       <el-pagination
-        v-model:current-page="pagination.pageNum"
-        v-model:page-size="pagination.pageSize"
+        v-model:current-page="pagination.page"
+        v-model:page-size="pagination.size"
         :page-sizes="[10, 20, 50, 100]"
         :total="pagination.total"
         layout="total, sizes, prev, pager, next, jumper"
@@ -120,14 +120,14 @@ const searchForm = reactive({
 // ---- Table ----
 const loading = ref(false)
 const tableData = ref<any[]>([])
-const pagination = reactive({ pageNum: 1, pageSize: 10, total: 0 })
+const pagination = reactive({ page: 1, size: 10, total: 0 })
 
 const fetchList = async () => {
   loading.value = true
   try {
     const params: Record<string, any> = {
-      pageNum: pagination.pageNum,
-      pageSize: pagination.pageSize,
+      page: pagination.page,
+      size: pagination.size,
     }
     if (searchForm.productKeyword) params.productKeyword = searchForm.productKeyword
     if (searchForm.locationId != null) params.locationId = searchForm.locationId
@@ -143,7 +143,7 @@ const fetchList = async () => {
 }
 
 const handleSearch = () => {
-  pagination.pageNum = 1
+  pagination.page = 1
   fetchList()
 }
 
@@ -168,7 +168,7 @@ const getStockColor = (row: any): string => {
 const locationList = ref<LocationItem[]>([])
 const fetchLocationList = async () => {
   try {
-    const res = await getLocationList({ pageNum: 1, pageSize: 999 })
+    const res = await getLocationList({ page: 1, size: 999 })
     locationList.value = res.data.records ?? res.data.list ?? []
   } catch { /* ignore */ }
 }
@@ -177,7 +177,7 @@ const fetchLocationList = async () => {
 const productList = ref<any[]>([])
 const fetchProductList = async () => {
   try {
-    const res = await getProductList({ pageNum: 1, pageSize: 999 })
+    const res = await getProductList({ page: 1, size: 999 })
     productList.value = res.data.records ?? res.data.list ?? []
   } catch { /* ignore */ }
 }

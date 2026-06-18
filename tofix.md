@@ -9,7 +9,7 @@
 | 优先级 | 模块 | 问题数 | 状态 |
 |---|---|---|---|
 | **P0** 致命 | 角色/权限分配、借还、盘点、操作日志、仪表盘、入库/出库详情 | 9 | 🔧 实施中 |
-| **P1** 严重 | 全局分页、基础资料筛选、VO 字段填充、用户密码重置 | 7 | ⏳ 待修复 |
+| **P1** 严重 | 全局分页、基础资料筛选、VO 字段填充、用户密码重置 | 7 | 🔧 实施中 |
 | **P2** 中等 | 下拉框 label、审计字段名、JWT/CORS、种子数据 | 4 | ⏳ 待修复 |
 | **P3** 低优 | 测试缺失、图表缺失、初始化流程缺失 | 2 | ⏳ 待修复 |
 
@@ -144,13 +144,96 @@
 
 ## P1 — 严重(必须修复)
 
-### ⏳ P1-1 【全局分页】UI 显示的每页大小无效
-### ⏳ P1-2 【供应商/客户/库位】列表搜索框无效
-### ⏳ P1-3 【入库明细 VO】`locationName` 始终为空
-### ⏳ P1-4 【角色列表 VO】`permissionIds` 不填充
-### ⏳ P1-5 【用户密码重置】走错接口
-### ⏳ P1-6 【商品分类树】整棵树 node-key 失效
-### ⏳ P1-7 【操作日志】Controller 返回实体不是 VO
+### ✅ P1-1 【全局分页】UI 显示的每页大小无效 — ✅ 已修复
+- **现象**:所有列表页切换"每页 20/50/100 条",实际始终只返回 10 条
+- **根因**:前端发 `pageNum/pageSize`,后端 `Controller.list` 只接 `Integer page, Integer size`(默认 1/10),后端默认值生效
+- **影响范围**:全栈 23 个列表视图
+- **修复**:前端 `pagination` 状态字段 + `params` 请求参数统一改为 `page/size`,与后端契约对齐
+- **测试**: `warehouse-web/src/__tests__/views/PaginationParamNameConsistency.test.ts`(26 个 case)
+  - 扫描 23 个列表视图,断言 params 对象中不允许出现 pageNum/pageSize/pageNo
+  - 断言 SupplierView/CustomerView/UserView/LocationView 使用 `pagination.page/size`
+  - 断言 11 个 Controller 仍然接 `Integer page, Integer size`(回归保护)
+- **反向证明**:临时还原 `pageNum → pageNum` → 25 个 case 失败
+- **状态**: ✅ 已修复
+
+### ✅ P1-2 【供应商/客户/库位】列表搜索框无效 — ✅ 已修复
+- **现象**:在供应商/客户/库位列表输入名称/编码搜索,刷新后仍显示所有数据
+- **根因**:后端 `Supplier/Customer/Location` 的 `Controller.list` 只接 `page/size`,没有 query DTO
+- **修复**:
+  - 新增 `SupplierQueryDTO` / `CustomerQueryDTO` / `LocationQueryDTO`(包含搜索字段)
+  - `SupplierService.page` / `CustomerService.page` / `WarehouseLocationService.page` 接受 QueryDTO,用 `QueryWrapper.like` 拼接
+  - 3 个 Controller.list 接受新 DTO
+- **测试**: `warehouse-web/src/__tests__/views/BasicDataSearchFilter.test.ts`(12 个 case)
+  - 断言 3 个新 DTO 字段存在
+  - 断言 3 个 Controller.list 接受 DTO
+  - 断言 3 个 ServiceImpl 用 `wrapper.like(...)` 拼接
+  - 断言前端 3 个 view 在 fetchList 时把 searchForm 字段塞进 params
+- **状态**: ✅ 已修复
+
+### ✅ P1-3 【入库明细 VO】`locationName` 始终为空 — ✅ 已修复
+- **现象**:入库单/出库单详情中,明细行的库位列只显示 ID,没有库位名称
+- **根因**:`InboundServiceImpl.convertDetailToVO` / `OutboundServiceImpl.convertDetailToVO` 没有根据 `locationId` 关联 `t_warehouse_location`
+- **修复**:
+  - `InboundServiceImpl` / `OutboundServiceImpl` 注入 `WarehouseLocationMapper`
+  - `convertDetailToVO` 中根据 `detail.locationId` 查 `location_code/name` 写入 VO
+  - 前端 `OutboundQueryView` 详情对话框新增"目标库位"列展示 `d.locationName`
+- **测试**: `warehouse-web/src/__tests__/views/InboundOutboundDetailLocationName.test.ts`(6 个 case)
+  - 断言 VO 包含 `locationCode` + `locationName` 字段
+  - 断言 Service 注入 `WarehouseLocationMapper` 并调用 `setLocationCode/setLocationName`
+  - 断言前端查询页表格渲染 `locationName`
+- **状态**: ✅ 已修复
+
+### ✅ P1-4 【角色列表 VO】`permissionIds` 不填充 — ✅ 已修复
+- **现象**:角色列表行的"权限数"显示不出来,管理员看不出权限是否成功分配
+- **根因**:后端 `RoleServiceImpl.page` 调用 `toRoleVO`,但每个 role 都单查 `RolePermission` 表(N+1);前端表格也没显示该字段
+- **修复**:
+  - `RoleServiceImpl.page` 用批量预取 `IN (roleIds)`,按 `groupingBy` 聚合,避免 N+1
+  - 前端 `RoleView` 表格新增"权限数"列,展示 `row.permissionIds.length`
+- **测试**: `warehouse-web/src/__tests__/views/RolePermissionIdsList.test.ts`(3 个 case)
+  - 断言 `RoleVO.permissionIds` 字段存在
+  - 断言 `RoleServiceImpl.page` 包含 batch prefetch 逻辑
+  - 断言前端 RoleView 渲染"权限数"列
+- **状态**: ✅ 已修复
+
+### ✅ P1-5 【用户密码重置】走错接口 — ✅ 已修复
+- **现象**:管理员在用户管理点击"重置密码",实际触发了用户全量更新接口,而非专用密码端点
+- **根因**:前端 `handleResetPwdSubmit` 调用 `updateUser({ id, password })`,走 `PUT /users/{id}`;后端专用 `PUT /users/{id}/password` 需要 `oldPassword`,管理员重置场景无 `oldPassword`
+- **修复**:
+  - 新增 `PasswordResetDTO`(仅 `newPassword`)+ `PasswordChangeDTO`(含 `oldPassword`+`newPassword`)
+  - 新增 `UserService.resetPassword(userId, newPassword)` 不需要 `oldPassword`
+  - 新增 `PUT /users/{id}/password/reset` 端点(@RequirePermission("system:user:resetPassword"))
+  - 前端 `api/user.ts` 新增 `resetPasswordAdmin(id, newPassword)`,`UserView.handleResetPwdSubmit` 改用专用接口
+- **测试**: `warehouse-web/src/__tests__/views/UserPasswordResetEndpoint.test.ts`(7 个 case)
+  - 断言 2 个 DTO 字段定义
+  - 断言 Controller 暴露 `/password/reset` 端点
+  - 断言 UserService.resetPassword 不验证 oldPassword
+  - 断言前端 handleResetPwdSubmit 调用 `resetPasswordAdmin` 而非 `updateUser`
+- **状态**: ✅ 已修复
+
+### ✅ P1-6 【商品分类树】整棵树 node-key 失效 — ✅ 已修复(随 P0-3)
+- **现象**:点击分类树节点无反应,勾选/编辑/删除全部失效
+- **根因**:`el-tree node-key="id"`,后端 `CategoryVO.categoryId` — 字段名不匹配
+- **修复**:P0-3 修复时已给 `CategoryVO` 加 `@JsonProperty("id") getId()` 别名,前端 `node-key="id"` 现在能匹配
+- **测试**: `warehouse-web/src/__tests__/views/CategoryTreeNodeKey.test.ts`(4 个 case)
+  - 断言 CategoryVO 同时有 `categoryId` 原字段 + `getId()` 别名
+  - 断言前端 CategoryView 使用 `node-key="id"` + `el-tree-select value: 'id'`
+  - **回归保护**:任一边破坏都能被此测试捕获
+- **状态**: ✅ 已修复
+
+### ✅ P1-7 【操作日志】Controller 返回实体不是 VO — ✅ 已修复
+- **现象**:操作日志列表所有列(操作人/IP/耗时/时间/描述)都空白
+- **根因**:Controller 返回 `IPage<OperationLog>`(entity),字段名 `logId/operation/executionTime/ipAddress/operateTime` 与前端表格读 `id/description/executeTime/ip/createTime` 不一致
+- **修复**:
+  - `OperationLogVO` 加 `@JsonProperty` 别名(`description`/`executeTime`/`ip`/`createTime`)+ `@JsonFormat` 时间格式
+  - `OperationLogController.list` 改返回 `IPage<OperationLogVO>`
+  - `OperationLogService` 新增 `pageVO(Page, query)` 做 Entity → VO 转换
+  - `OperationLogServiceImpl.pageVO` 逐字段 set
+- **测试**: `warehouse-web/src/__tests__/views/OperationLogVoContract.test.ts`(5 个 case)
+  - 断言 Controller 返回 `IPage<OperationLogVO>` 而非 `IPage<OperationLog>`
+  - 断言 VO 有 4 个 `@JsonProperty` 别名 + `@JsonFormat`
+  - 断言 Service 接口包含 `pageVO` 方法
+  - 断言前端 OperationLogView 表格 prop 与别名一致
+- **状态**: ✅ 已修复
 
 ## P2 — 中等(建议修复)
 
@@ -190,6 +273,35 @@
 | P0-9 | 入库出库详情 | ✅ 已修复(随 P0-3) | `VoJsonAliasTest.inboundOrderVoHasIdAlias` / `outboundOrderVoHasIdAlias` |
 
 **测试总计**: 后端 17 个 case,前端 18 个 case,共 35 个全部通过 ✅
+
+### P1 实现进度跟踪
+
+| 编号 | 模块 | 状态 | 测试文件 |
+|---|---|---|---|
+| P1-1 | 全局分页参数对齐 | ✅ 已修复 | `warehouse-web/src/__tests__/views/PaginationParamNameConsistency.test.ts` |
+| P1-2 | 供应商/客户/库位搜索框 | ✅ 已修复 | `warehouse-web/src/__tests__/views/BasicDataSearchFilter.test.ts` |
+| P1-3 | 入库/出库明细 locationName | ✅ 已修复 | `warehouse-web/src/__tests__/views/InboundOutboundDetailLocationName.test.ts` |
+| P1-4 | 角色列表 permissionIds(N+1 优化) | ✅ 已修复 | `warehouse-web/src/__tests__/views/RolePermissionIdsList.test.ts` |
+| P1-5 | 用户密码重置专用接口 | ✅ 已修复 | `warehouse-web/src/__tests__/views/UserPasswordResetEndpoint.test.ts` |
+| P1-6 | 商品分类树 node-key(双轨契约) | ✅ 已修复(随 P0-3) | `warehouse-web/src/__tests__/views/CategoryTreeNodeKey.test.ts` |
+| P1-7 | 操作日志 Controller → VO | ✅ 已修复 | `warehouse-web/src/__tests__/views/OperationLogVoContract.test.ts` |
+
+**P1 新增 53 个测试 case,合并后总测试数 85 个全部通过 ✅**
+
+### 文件清单
+
+**P1 新增 DTO(3 个)**:
+- `PasswordResetDTO.java` / `PasswordChangeDTO.java` — P1-5
+- `SupplierQueryDTO.java` / `CustomerQueryDTO.java` / `LocationQueryDTO.java` — P1-2
+
+**P1 修改后端文件(11 个)**:
+- `controller/{Supplier,Customer,WarehouseLocation,User,OperationLog}Controller.java`
+- `service/{Supplier,Customer,WarehouseLocation,User,Role,OperationLog}Service.java`
+- `service/impl/{Supplier,Customer,WarehouseLocation,User,Role,OperationLog,Inbound,Outbound}ServiceImpl.java`
+- `dto/response/OperationLogVO.java`
+
+**P1 修改前端文件(25 个)**:
+- 23 个视图(分页参数统一 page/size)+ `OutboundQueryView`(库位列)+ `RoleView`(权限数列)+ `UserView`(密码接口)+ `api/user.ts`
 
 ---
 

@@ -23,3 +23,11 @@ export function getUserById(id: number | string) {
 export function updatePassword(id: number | string, data: any) {
   return request({ url: `/users/${id}/password`, method: 'put', data })
 }
+
+/**
+ * 管理员重置用户密码(P1-5 修复)
+ * 不需要 oldPassword,只接 newPassword
+ */
+export function resetPasswordAdmin(id: number | string, newPassword: string) {
+  return request({ url: `/users/${id}/password/reset`, method: 'put', data: { newPassword } })
+}

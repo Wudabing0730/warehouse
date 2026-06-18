@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.warehouse.common.BusinessException;
 import com.warehouse.dto.request.SupplierCreateDTO;
+import com.warehouse.dto.request.SupplierQueryDTO;
 import com.warehouse.dto.request.SupplierUpdateDTO;
 import com.warehouse.dto.response.SupplierVO;
 import com.warehouse.entity.Supplier;
@@ -22,8 +23,19 @@ import java.util.stream.Collectors;
 public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier> implements SupplierService {
 
     @Override
-    public IPage<SupplierVO> page(Page<Supplier> page) {
+    public IPage<SupplierVO> page(Page<Supplier> page, SupplierQueryDTO query) {
         QueryWrapper<Supplier> wrapper = new QueryWrapper<>();
+        if (query != null) {
+            if (query.getSupplierCode() != null && !query.getSupplierCode().isEmpty()) {
+                wrapper.like("supplier_code", query.getSupplierCode());
+            }
+            if (query.getSupplierName() != null && !query.getSupplierName().isEmpty()) {
+                wrapper.like("supplier_name", query.getSupplierName());
+            }
+            if (query.getStatus() != null) {
+                wrapper.eq("status", query.getStatus());
+            }
+        }
         wrapper.orderByDesc("create_time");
         IPage<Supplier> supplierPage = baseMapper.selectPage(page, wrapper);
         List<SupplierVO> voList = supplierPage.getRecords().stream()

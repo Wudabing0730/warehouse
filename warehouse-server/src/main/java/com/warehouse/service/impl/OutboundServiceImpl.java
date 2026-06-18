@@ -18,12 +18,14 @@ import com.warehouse.entity.OutboundOrderDetail;
 import com.warehouse.entity.Product;
 import com.warehouse.entity.Stock;
 import com.warehouse.entity.User;
+import com.warehouse.entity.WarehouseLocation;
 import com.warehouse.mapper.CustomerMapper;
 import com.warehouse.mapper.OutboundOrderDetailMapper;
 import com.warehouse.mapper.OutboundOrderMapper;
 import com.warehouse.mapper.ProductMapper;
 import com.warehouse.mapper.StockMapper;
 import com.warehouse.mapper.UserMapper;
+import com.warehouse.mapper.WarehouseLocationMapper;
 import com.warehouse.security.SecurityUtils;
 import com.warehouse.service.OutboundService;
 import com.warehouse.util.OrderNoGenerator;
@@ -56,6 +58,9 @@ public class OutboundServiceImpl extends ServiceImpl<OutboundOrderMapper, Outbou
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private WarehouseLocationMapper warehouseLocationMapper;
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
@@ -282,6 +287,13 @@ public class OutboundServiceImpl extends ServiceImpl<OutboundOrderMapper, Outbou
                 vo.setProductCode(product.getProductCode());
                 vo.setProductName(product.getProductName());
                 vo.setProductUnit(product.getUnit());
+            }
+        }
+        if (detail.getLocationId() != null) {
+            WarehouseLocation location = warehouseLocationMapper.selectById(detail.getLocationId());
+            if (location != null) {
+                vo.setLocationCode(location.getLocationCode());
+                vo.setLocationName(location.getLocationName());
             }
         }
         return vo;

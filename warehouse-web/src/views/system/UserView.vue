@@ -66,7 +66,7 @@
       <div class="pagination-wrapper">
         <el-pagination
           v-model:current-page="pagination.page"
-          v-model:page-size="pagination.pageSize"
+          v-model:page-size="pagination.size"
           :page-sizes="[10, 20, 50, 100]"
           :total="pagination.total"
           layout="total, sizes, prev, pager, next, jumper"
@@ -149,7 +149,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { getUserList, createUser, updateUser, deleteUser } from '@/api/user'
+import { getUserList, createUser, updateUser, deleteUser, resetPasswordAdmin } from '@/api/user'
 import { getRoleList } from '@/api/role'
 
 interface User {
@@ -190,7 +190,7 @@ const tableData = ref<User[]>([])
 const loading = ref(false)
 const pagination = reactive({
   page: 1,
-  pageSize: 10,
+  size: 10,
   total: 0,
 })
 
@@ -199,7 +199,7 @@ async function fetchData() {
   try {
     const params: Record<string, unknown> = {
       page: pagination.page,
-      pageSize: pagination.pageSize,
+      size: pagination.size,
     }
     if (searchForm.username) params.username = searchForm.username
     if (searchForm.realName) params.realName = searchForm.realName
@@ -263,7 +263,7 @@ const roleList = ref<Role[]>([])
 
 async function fetchRoles() {
   try {
-    const res = await getRoleList({ pageSize: 999 })
+    const res = await getRoleList({ size: 999 })
     const data = res.data || res
     roleList.value = data.records ?? data.list ?? data ?? []
   } catch {
@@ -392,7 +392,7 @@ async function handleResetPwdSubmit() {
 
   resetPwdLoading.value = true
   try {
-    await updateUser({ id: resetPwdEditingId.value, password: resetPwdForm.password })
+    await resetPasswordAdmin(resetPwdEditingId.value!, resetPwdForm.password)
     ElMessage.success('密码重置成功')
     resetPwdVisible.value = false
   } catch {

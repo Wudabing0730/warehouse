@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.warehouse.common.BusinessException;
 import com.warehouse.dto.request.CustomerCreateDTO;
+import com.warehouse.dto.request.CustomerQueryDTO;
 import com.warehouse.dto.request.CustomerUpdateDTO;
 import com.warehouse.dto.response.CustomerVO;
 import com.warehouse.entity.Customer;
@@ -22,8 +23,19 @@ import java.util.stream.Collectors;
 public class CustomerServiceImpl extends ServiceImpl<CustomerMapper, Customer> implements CustomerService {
 
     @Override
-    public IPage<CustomerVO> page(Page<Customer> page) {
+    public IPage<CustomerVO> page(Page<Customer> page, CustomerQueryDTO query) {
         QueryWrapper<Customer> wrapper = new QueryWrapper<>();
+        if (query != null) {
+            if (query.getCustomerCode() != null && !query.getCustomerCode().isEmpty()) {
+                wrapper.like("customer_code", query.getCustomerCode());
+            }
+            if (query.getCustomerName() != null && !query.getCustomerName().isEmpty()) {
+                wrapper.like("customer_name", query.getCustomerName());
+            }
+            if (query.getStatus() != null) {
+                wrapper.eq("status", query.getStatus());
+            }
+        }
         wrapper.orderByDesc("create_time");
         IPage<Customer> customerPage = baseMapper.selectPage(page, wrapper);
         List<CustomerVO> voList = customerPage.getRecords().stream()
