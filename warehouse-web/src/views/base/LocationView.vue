@@ -26,7 +26,7 @@
       </template>
 
       <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
-        <el-table-column prop="id" label="ID" width="70" />
+        <el-table-column prop="locationId" label="ID" width="70" />
         <el-table-column prop="locationCode" label="库位编码" width="150" />
         <el-table-column prop="locationName" label="库位名称" width="180" />
         <el-table-column prop="zone" label="区域" width="120" />
@@ -179,7 +179,7 @@ const handleAdd = () => {
 const handleEdit = (row: any) => {
   resetForm()
   dialogTitle.value = '编辑库位'
-  form.id = row.id
+  form.id = row.locationId
   form.locationCode = row.locationCode ?? ''
   form.locationName = row.locationName ?? ''
   form.zone = row.zone ?? ''
@@ -216,7 +216,7 @@ const handleDelete = (row: any) => {
     cancelButtonText: '取消',
     type: 'warning',
   }).then(async () => {
-    await deleteLocation(row.id)
+    await deleteLocation(row.locationId)
     ElMessage.success('删除成功')
     fetchList()
   }).catch(() => { /* cancelled */ })

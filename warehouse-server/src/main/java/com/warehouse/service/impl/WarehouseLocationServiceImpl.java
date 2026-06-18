@@ -32,11 +32,18 @@ public class WarehouseLocationServiceImpl extends ServiceImpl<WarehouseLocationM
     public IPage<LocationVO> page(Page<WarehouseLocation> page) {
         QueryWrapper<WarehouseLocation> wrapper = new QueryWrapper<>();
         wrapper.orderByDesc("create_time");
+        // MyBatis-Plus 3.5.9 分页拦截器在 mybatis-plus-jsqlparser 模块中未引入，
+        // 需手动设置 LIMIT 并查询总数
+        Long total = baseMapper.selectCount(wrapper);
+        page.setTotal(total);
+        int current = (int) page.getCurrent();
+        int size = (int) page.getSize();
+        wrapper.last("LIMIT " + (current - 1) * size + "," + size);
         IPage<WarehouseLocation> locationPage = baseMapper.selectPage(page, wrapper);
         List<LocationVO> voList = locationPage.getRecords().stream()
                 .map(this::convertToVO)
                 .collect(Collectors.toList());
-        IPage<LocationVO> voPage = new Page<>(locationPage.getCurrent(), locationPage.getSize(), locationPage.getTotal());
+        IPage<LocationVO> voPage = new Page<>(locationPage.getCurrent(), locationPage.getSize(), total);
         voPage.setRecords(voList);
         return voPage;
     }
