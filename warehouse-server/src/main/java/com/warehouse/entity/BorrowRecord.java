@@ -9,7 +9,6 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -24,9 +23,14 @@ public class BorrowRecord implements Serializable {
     private Long productId;
     private BigDecimal quantity;
     private String borrower;
-    private LocalDate borrowDate;
-    private LocalDate expectedReturnDate;
-    private LocalDate actualReturnDate;
+    /**
+     * P0-4:从 LocalDate 改为 LocalDateTime,保留时分秒以便精确记录借出/归还时刻。
+     * 配合 SQL: t_borrow_record.borrow_date / expected_return_date / actual_return_date
+     * 从 DATE 改为 DATETIME。
+     */
+    private LocalDateTime borrowDate;
+    private LocalDateTime expectedReturnDate;
+    private LocalDateTime actualReturnDate;
     private BigDecimal returnQuantity;
     private Long operatorId;
     private Integer status;

@@ -1,5 +1,6 @@
 package com.warehouse.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -7,6 +8,7 @@ import java.util.List;
 
 @Data
 public class CategoryVO {
+
     private Long categoryId;
 
     private String categoryName;
@@ -20,4 +22,9 @@ public class CategoryVO {
     private List<CategoryVO> children;
 
     private LocalDateTime createTime;
+
+    @JsonProperty("id")
+    public Long getId() {
+        return categoryId;
+    }
 }

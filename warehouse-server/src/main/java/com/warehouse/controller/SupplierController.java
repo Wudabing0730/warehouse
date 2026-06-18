@@ -41,7 +41,7 @@ public class SupplierController {
     }
 
     @PostMapping
-    @RequirePermission("supplier:create")
+    @RequirePermission("base:supplier:create")
     @Operation(summary = "Create supplier", description = "Create a new supplier")
     public Result<SupplierVO> create(@Valid @RequestBody SupplierCreateDTO dto) {
         SupplierVO supplier = supplierService.create(dto);
@@ -49,7 +49,7 @@ public class SupplierController {
     }
 
     @PutMapping("/{id}")
-    @RequirePermission("supplier:update")
+    @RequirePermission("base:supplier:edit")
     @Operation(summary = "Update supplier", description = "Update an existing supplier's information")
     public Result<SupplierVO> update(@PathVariable Long id, @Valid @RequestBody SupplierUpdateDTO dto) {
         SupplierVO supplier = supplierService.update(id, dto);
@@ -57,7 +57,7 @@ public class SupplierController {
     }
 
     @DeleteMapping("/{id}")
-    @RequirePermission("supplier:delete")
+    @RequirePermission("base:supplier:delete")
     @Operation(summary = "Delete supplier", description = "Delete a supplier by its unique identifier")
     public Result<Void> delete(@PathVariable Long id) {
         supplierService.delete(id);

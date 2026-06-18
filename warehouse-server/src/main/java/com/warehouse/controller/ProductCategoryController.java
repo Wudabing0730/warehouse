@@ -30,7 +30,7 @@ public class ProductCategoryController {
     }
 
     @PostMapping
-    @RequirePermission("category:create")
+    @RequirePermission("base:category:create")
     @Operation(summary = "Create category", description = "Create a new product category")
     public Result<CategoryVO> create(@Valid @RequestBody CategoryCreateDTO dto) {
         CategoryVO category = productCategoryService.create(dto);
@@ -38,7 +38,7 @@ public class ProductCategoryController {
     }
 
     @PutMapping("/{id}")
-    @RequirePermission("category:update")
+    @RequirePermission("base:category:edit")
     @Operation(summary = "Update category", description = "Update an existing product category's information")
     public Result<CategoryVO> update(@PathVariable Long id, @Valid @RequestBody CategoryUpdateDTO dto) {
         CategoryVO category = productCategoryService.update(id, dto);
@@ -46,7 +46,7 @@ public class ProductCategoryController {
     }
 
     @DeleteMapping("/{id}")
-    @RequirePermission("category:delete")
+    @RequirePermission("base:category:delete")
     @Operation(summary = "Delete category", description = "Delete a product category by its unique identifier")
     public Result<Void> delete(@PathVariable Long id) {
         productCategoryService.delete(id);

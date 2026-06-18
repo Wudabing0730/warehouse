@@ -40,7 +40,7 @@ public class InventoryCheckController {
     }
 
     @PostMapping
-    @RequirePermission("inventoryCheck:create")
+    @RequirePermission("inventory:create")
     @Operation(summary = "Create inventory check", description = "Create a new inventory check record")
     public Result<InventoryCheckVO> create(@Valid @RequestBody InventoryCheckCreateDTO dto) {
         InventoryCheckVO check = inventoryCheckService.create(dto);
@@ -48,7 +48,7 @@ public class InventoryCheckController {
     }
 
     @PutMapping("/{id}/confirm")
-    @RequirePermission("inventoryCheck:confirm")
+    @RequirePermission("inventory:confirm")
     @Operation(summary = "Confirm inventory check", description = "Confirm an inventory check and adjust stock accordingly")
     public Result<Void> confirm(@PathVariable Long id, @Valid @RequestBody InventoryCheckConfirmDTO dto) {
         inventoryCheckService.confirm(id, dto);

@@ -43,7 +43,7 @@ public class ProductController {
     }
 
     @PostMapping
-    @RequirePermission("product:create")
+    @RequirePermission("base:product:create")
     @Operation(summary = "Create product", description = "Create a new product")
     public Result<ProductVO> create(@Valid @RequestBody ProductCreateDTO dto) {
         ProductVO product = productService.create(dto);
@@ -51,7 +51,7 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
-    @RequirePermission("product:update")
+    @RequirePermission("base:product:edit")
     @Operation(summary = "Update product", description = "Update an existing product's information")
     public Result<ProductVO> update(@PathVariable Long id, @Valid @RequestBody ProductUpdateDTO dto) {
         ProductVO product = productService.update(id, dto);
@@ -59,7 +59,7 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
-    @RequirePermission("product:delete")
+    @RequirePermission("base:product:delete")
     @Operation(summary = "Delete product", description = "Delete a product by its unique identifier")
     public Result<Void> delete(@PathVariable Long id) {
         productService.delete(id);

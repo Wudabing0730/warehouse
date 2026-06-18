@@ -2,7 +2,7 @@ package com.warehouse.dto.request;
 
 import lombok.Data;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 public class BorrowQueryDTO {
@@ -14,7 +14,8 @@ public class BorrowQueryDTO {
 
     private Integer status;
 
-    private LocalDate startDate;
+    /** P0-4: 与实体/DTO 对齐为 LocalDateTime */
+    private LocalDateTime startDate;
 
-    private LocalDate endDate;
+    private LocalDateTime endDate;
 }

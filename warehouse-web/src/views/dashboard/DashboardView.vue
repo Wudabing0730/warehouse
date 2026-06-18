@@ -94,25 +94,37 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { Box, Coin, Upload, Download, Plus, Search, List } from '@element-plus/icons-vue'
+import { getDashboardSummary, type RecentOperation } from '@/api/dashboard'
 
+// P0-8 修复:不再使用硬编码假数据,初始化为零值,onMounted 时拉取真实接口
 const stats = reactive({
-  productCount: 156,
-  totalStock: 8420,
-  todayInbound: 12,
-  todayOutbound: 8,
+  productCount: 0,
+  totalStock: 0,
+  todayInbound: 0,
+  todayOutbound: 0,
 })
 
 const alerts = ref<string[]>([])
+const recentOps = ref<RecentOperation[]>([])
 
-const recentOps = ref([
-  { time: '2026-06-18 14:30', description: '入库 - 电子元器件 (批次: B20260618-001)', user: '张三' },
-  { time: '2026-06-18 13:15', description: '出库 - 五金配件 (批次: B20260615-003)', user: '李四' },
-  { time: '2026-06-18 11:00', description: '盘点 - A仓货架A-01', user: '王五' },
-  { time: '2026-06-18 09:45', description: '调拨 - A仓 → B仓 (螺丝M6x20)', user: '赵六' },
-  { time: '2026-06-18 08:30', description: '入库 - 包装材料 (批次: B20260618-002)', user: '张三' },
-])
+async function fetchDashboardData() {
+  try {
+    const res: any = await getDashboardSummary()
+    // 后端返回 Result<T> 结构 { code, data, ... },request 拦截器已自动拆 data
+    const summary = res?.data ?? res
+    if (!summary) return
+    stats.productCount = summary.productCount ?? 0
+    stats.totalStock = summary.totalStock ?? 0
+    stats.todayInbound = summary.todayInbound ?? 0
+    stats.todayOutbound = summary.todayOutbound ?? 0
+    alerts.value = summary.alerts ?? []
+    recentOps.value = summary.recentOps ?? []
+  } catch {
+    // 错误由全局 axios 拦截器统一处理,这里保持零值
+  }
+}
 
 const quickActions = [
   { label: '入库登记', icon: Plus, path: '/inbound/create' },
@@ -122,6 +134,10 @@ const quickActions = [
   { label: '出库查询', icon: List, path: '/outbound/query' },
   { label: '盘点管理', icon: List, path: '/inventory/tasks' },
 ]
+
+onMounted(() => {
+  fetchDashboardData()
+})
 </script>
 
 <style scoped>

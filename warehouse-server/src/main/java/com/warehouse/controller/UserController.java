@@ -42,7 +42,7 @@ public class UserController {
     }
 
     @PostMapping
-    @RequirePermission("user:create")
+    @RequirePermission("system:user:create")
     @Operation(summary = "Create user", description = "Create a new user account with roles")
     public Result<UserVO> create(@Valid @RequestBody UserCreateDTO dto) {
         UserVO user = userService.create(dto);
@@ -50,7 +50,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    @RequirePermission("user:update")
+    @RequirePermission("system:user:edit")
     @Operation(summary = "Update user", description = "Update an existing user's information and roles")
     public Result<UserVO> update(@PathVariable Long id, @Valid @RequestBody UserUpdateDTO dto) {
         UserVO user = userService.update(id, dto);
@@ -58,7 +58,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    @RequirePermission("user:delete")
+    @RequirePermission("system:user:delete")
     @Operation(summary = "Delete user", description = "Delete a user by its unique identifier")
     public Result<Void> delete(@PathVariable Long id) {
         userService.delete(id);

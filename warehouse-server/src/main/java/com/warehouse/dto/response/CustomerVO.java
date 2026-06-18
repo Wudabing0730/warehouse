@@ -1,11 +1,13 @@
 package com.warehouse.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Data
 public class CustomerVO {
+
     private Long customerId;
 
     private String customerCode;
@@ -23,4 +25,9 @@ public class CustomerVO {
     private Integer status;
 
     private LocalDateTime createTime;
+
+    @JsonProperty("id")
+    public Long getId() {
+        return customerId;
+    }
 }

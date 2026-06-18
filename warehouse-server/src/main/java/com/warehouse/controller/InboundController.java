@@ -48,7 +48,7 @@ public class InboundController {
     }
 
     @PutMapping("/{id}/confirm")
-    @RequirePermission("inbound:confirm")
+    @RequirePermission("inbound:audit")
     @Operation(summary = "Confirm inbound order", description = "Confirm or reject a pending inbound order")
     public Result<Void> confirm(@PathVariable Long id, @Valid @RequestBody InboundConfirmDTO dto) {
         inboundService.confirm(id, dto);

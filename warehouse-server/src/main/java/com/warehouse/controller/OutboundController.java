@@ -48,7 +48,7 @@ public class OutboundController {
     }
 
     @PutMapping("/{id}/confirm")
-    @RequirePermission("outbound:confirm")
+    @RequirePermission("outbound:audit")
     @Operation(summary = "Confirm outbound order", description = "Confirm or reject a pending outbound order")
     public Result<Void> confirm(@PathVariable Long id, @Valid @RequestBody OutboundConfirmDTO dto) {
         outboundService.confirm(id, dto);

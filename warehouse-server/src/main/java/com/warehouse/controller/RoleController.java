@@ -42,7 +42,7 @@ public class RoleController {
     }
 
     @PostMapping
-    @RequirePermission("role:create")
+    @RequirePermission("system:role:create")
     @Operation(summary = "Create role", description = "Create a new role with optional permission assignments")
     public Result<RoleVO> create(@Valid @RequestBody RoleCreateDTO dto) {
         RoleVO role = roleService.create(dto);
@@ -50,7 +50,7 @@ public class RoleController {
     }
 
     @PutMapping("/{id}")
-    @RequirePermission("role:update")
+    @RequirePermission("system:role:edit")
     @Operation(summary = "Update role", description = "Update an existing role's information")
     public Result<RoleVO> update(@PathVariable Long id, @Valid @RequestBody RoleUpdateDTO dto) {
         RoleVO role = roleService.update(id, dto);
@@ -58,7 +58,7 @@ public class RoleController {
     }
 
     @DeleteMapping("/{id}")
-    @RequirePermission("role:delete")
+    @RequirePermission("system:role:delete")
     @Operation(summary = "Delete role", description = "Delete a role by its unique identifier")
     public Result<Void> delete(@PathVariable Long id) {
         roleService.delete(id);
@@ -66,7 +66,7 @@ public class RoleController {
     }
 
     @PutMapping("/{id}/permissions")
-    @RequirePermission("role:assignPermissions")
+    @RequirePermission("system:role:assign")
     @Operation(summary = "Assign permissions", description = "Assign a list of permission IDs to a role")
     public Result<Void> assignPermissions(@PathVariable Long id, @RequestBody List<Long> permissionIds) {
         roleService.assignPermissions(id, permissionIds);

@@ -41,7 +41,7 @@ public class WarehouseLocationController {
     }
 
     @PostMapping
-    @RequirePermission("location:create")
+    @RequirePermission("base:location:create")
     @Operation(summary = "Create location", description = "Create a new warehouse location")
     public Result<LocationVO> create(@Valid @RequestBody LocationCreateDTO dto) {
         LocationVO location = warehouseLocationService.create(dto);
@@ -49,7 +49,7 @@ public class WarehouseLocationController {
     }
 
     @PutMapping("/{id}")
-    @RequirePermission("location:update")
+    @RequirePermission("base:location:edit")
     @Operation(summary = "Update location", description = "Update an existing warehouse location's information")
     public Result<LocationVO> update(@PathVariable Long id, @Valid @RequestBody LocationUpdateDTO dto) {
         LocationVO location = warehouseLocationService.update(id, dto);
@@ -57,7 +57,7 @@ public class WarehouseLocationController {
     }
 
     @DeleteMapping("/{id}")
-    @RequirePermission("location:delete")
+    @RequirePermission("base:location:delete")
     @Operation(summary = "Delete location", description = "Delete a warehouse location by its unique identifier")
     public Result<Void> delete(@PathVariable Long id) {
         warehouseLocationService.delete(id);

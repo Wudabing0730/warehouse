@@ -41,7 +41,7 @@ public class CustomerController {
     }
 
     @PostMapping
-    @RequirePermission("customer:create")
+    @RequirePermission("base:customer:create")
     @Operation(summary = "Create customer", description = "Create a new customer")
     public Result<CustomerVO> create(@Valid @RequestBody CustomerCreateDTO dto) {
         CustomerVO customer = customerService.create(dto);
@@ -49,7 +49,7 @@ public class CustomerController {
     }
 
     @PutMapping("/{id}")
-    @RequirePermission("customer:update")
+    @RequirePermission("base:customer:edit")
     @Operation(summary = "Update customer", description = "Update an existing customer's information")
     public Result<CustomerVO> update(@PathVariable Long id, @Valid @RequestBody CustomerUpdateDTO dto) {
         CustomerVO customer = customerService.update(id, dto);
@@ -57,7 +57,7 @@ public class CustomerController {
     }
 
     @DeleteMapping("/{id}")
-    @RequirePermission("customer:delete")
+    @RequirePermission("base:customer:delete")
     @Operation(summary = "Delete customer", description = "Delete a customer by its unique identifier")
     public Result<Void> delete(@PathVariable Long id) {
         customerService.delete(id);

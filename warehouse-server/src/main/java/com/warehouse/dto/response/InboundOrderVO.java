@@ -1,5 +1,6 @@
 package com.warehouse.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -7,6 +8,7 @@ import java.util.List;
 
 @Data
 public class InboundOrderVO {
+
     private Long orderId;
 
     private String orderNo;
@@ -34,4 +36,9 @@ public class InboundOrderVO {
     private List<InboundOrderDetailVO> details;
 
     private LocalDateTime createTime;
+
+    @JsonProperty("id")
+    public Long getId() {
+        return orderId;
+    }
 }

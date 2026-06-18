@@ -27,7 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Service
 public class BorrowServiceImpl extends ServiceImpl<BorrowRecordMapper, BorrowRecord> implements BorrowService {
@@ -196,7 +196,7 @@ public class BorrowServiceImpl extends ServiceImpl<BorrowRecordMapper, BorrowRec
         if (dto.getActualReturnDate() != null) {
             record.setActualReturnDate(dto.getActualReturnDate());
         } else {
-            record.setActualReturnDate(LocalDate.now());
+            record.setActualReturnDate(LocalDateTime.now());
         }
 
         // Determine status

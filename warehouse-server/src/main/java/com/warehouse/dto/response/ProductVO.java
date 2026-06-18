@@ -1,12 +1,13 @@
 package com.warehouse.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
 public class ProductVO {
+
     private Long productId;
 
     private String productCode;
@@ -21,9 +22,9 @@ public class ProductVO {
 
     private String spec;
 
-    private BigDecimal upperLimit;
+    private java.math.BigDecimal upperLimit;
 
-    private BigDecimal lowerLimit;
+    private java.math.BigDecimal lowerLimit;
 
     private Long defaultLocationId;
 
@@ -34,4 +35,9 @@ public class ProductVO {
     private LocalDateTime createTime;
 
     private LocalDateTime updateTime;
+
+    @JsonProperty("id")
+    public Long getId() {
+        return productId;
+    }
 }

@@ -103,9 +103,9 @@
         ref="treeRef"
         :data="permissionTree"
         show-checkbox
-        node-key="id"
+        node-key="permissionId"
         default-expand-all
-        :props="{ label: 'name', children: 'children' }"
+        :props="{ label: 'permissionName', children: 'children' }"
       />
       <template #footer>
         <el-button @click="permissionVisible = false">取消</el-button>

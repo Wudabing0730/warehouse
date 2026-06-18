@@ -22,8 +22,10 @@
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="searchForm.status" placeholder="请选择状态" clearable style="width: 120px">
-            <el-option label="成功" value="success" />
-            <el-option label="失败" value="fail" />
+            <!-- P0-6: 后端 OperationLogQueryDTO.status 是 Integer(1=成功/0=失败),
+                 之前发 'success'/'fail' 字符串永远查不到,改为 :value 整型绑定 -->
+            <el-option label="成功" :value="1" />
+            <el-option label="失败" :value="0" />
           </el-select>
         </el-form-item>
         <el-form-item label="操作时间">
@@ -97,8 +99,9 @@
         <el-table-column prop="executeTime" label="执行耗时(ms)" width="120" align="center" />
         <el-table-column label="状态" width="80" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.status === 'success' ? 'success' : 'danger'" size="small">
-              {{ row.status === 'success' ? '成功' : '失败' }}
+            <!-- P0-6: 后端返回 1/0,前端展示按整型比对 -->
+            <el-tag :type="row.status === 1 ? 'success' : 'danger'" size="small">
+              {{ row.status === 1 ? '成功' : '失败' }}
             </el-tag>
           </template>
         </el-table-column>
@@ -134,7 +137,8 @@ interface LogEntry {
   requestMethod: string
   requestUrl: string
   executeTime: number
-  status: string
+  /** P0-6: 后端返回整型 1=成功 / 0=失败 */
+  status: number
   ip: string
   createTime: string
   requestParams?: string
@@ -145,7 +149,8 @@ interface LogEntry {
 const searchForm = reactive({
   userId: '',
   module: '' as string,
-  status: '' as string,
+  /** P0-6: 改为 number,与后端 Integer 对齐 */
+  status: null as number | null,
   dateRange: [] as string[],
 })
 
@@ -192,7 +197,7 @@ function handleSearch() {
 function handleReset() {
   searchForm.userId = ''
   searchForm.module = ''
-  searchForm.status = ''
+  searchForm.status = null
   searchForm.dateRange = []
   handleSearch()
 }
