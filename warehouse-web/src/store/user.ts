@@ -35,17 +35,17 @@ export const useUserStore = defineStore('user', () => {
       username: usernameParam,
       password,
     })
-    const { accessToken: at, refreshToken: rt, user } = response
+    const { accessToken: at, refreshToken: rt, userInfo } = response
     accessToken.value = at
     refreshToken.value = rt
     persistTokens()
 
-    if (user) {
-      userId.value = user.id ?? ''
-      username.value = user.username ?? ''
-      realName.value = user.realName ?? ''
-      permissions.value = user.permissions ?? []
-      roles.value = user.roles ?? []
+    if (userInfo) {
+      userId.value = userInfo.userId ?? userInfo.id ?? ''
+      username.value = userInfo.username ?? ''
+      realName.value = userInfo.realName ?? ''
+      permissions.value = userInfo.permissions ?? []
+      roles.value = userInfo.roles ?? []
     }
   }
 
@@ -111,5 +111,6 @@ export const useUserStore = defineStore('user', () => {
     logout,
     refreshAccessToken,
     fetchUserInfo,
+    restoreTokens,
   }
 })
