@@ -1,353 +1,256 @@
 @echo off
+chcp 65001 >nul 2>&1
+setlocal EnableDelayedExpansion
+
+echo ============================================================
+echo   仓库管理系统 - 一键启动脚本
+echo ============================================================
+echo.
+
+set "PROJECT_DIR=%~dp0"
+set "PROJECT_DIR=%PROJECT_DIR:~0,-1%"
+set "SERVER_DIR=%PROJECT_DIR%\warehouse-server"
+set "WEB_DIR=%PROJECT_DIR%\warehouse-web"
+set "SQL_DIR=%PROJECT_DIR%\sql"
+set "JAR_PATH="
+set "BACKEND_PORT=8080"
+set "FRONTEND_PORT=5173"
+set "MYSQL_SERVICE=MySQL80"
+set "REDIS_SERVICE=Redis"
+
 :: ============================================================
-::  Warehouse Management System - One-Click Launcher
-::  Usage: start.bat [stop|status|db]
+:: 1. 检查必要工具
 :: ============================================================
-title WMS Launch Panel
+echo [1/7] 检查运行环境...
 
-:: Fix 1: Use cd /d first, then detect encoding-safe codepage
-cd /d "%~dp0" 2>nul
-if errorlevel 1 (
-    echo Failed to change directory
-    pause
-    exit /b 1
-)
-
-:: ======================= Configuration =======================
-set "MYSQL_HOST=localhost"
-set "MYSQL_PORT=3306"
-set "MYSQL_USER=root"
-set "MYSQL_PASS=123456"
-set "MYSQL_DB=warehouse"
-set "REDIS_HOST=localhost"
-set "REDIS_PORT=6379"
-set "SERVER_PORT=8080"
-set "WEB_PORT=5173"
-
-:: ========================== Banner ===========================
-echo.
-echo   ========================================================
-echo   ^|    Warehouse Management System (WMS) Launcher        ^|
-echo   ^|    cang ku guan li xi tong                          ^|
-echo   ========================================================
-echo.
-
-:: ===================== Command Dispatch =====================
-:: Fix 2: No & inside if blocks, each command on its own line
-if /i "%~1"=="stop" (
-    call :stopServices
-    goto :end
-)
-if /i "%~1"=="status" (
-    call :checkStatus
-    goto :end
-)
-if /i "%~1"=="db" (
-    call :setupDatabase
-    goto :end
-)
-
-:: ==================== Full Launch Flow ======================
-:: Fix 3: Use if errorlevel 1 instead of || for reliability
-call :checkPrereqs
-if errorlevel 1 goto :end
-
-call :setupDatabase
-if errorlevel 1 goto :end
-
-call :setupFrontend
-if errorlevel 1 goto :end
-
-call :startBackend
-if errorlevel 1 goto :end
-
-call :startFrontend
-if errorlevel 1 goto :end
-
-:: ==================== Launch Complete =======================
-echo   ========================================================
-echo   ^|  [OK] System started!                               ^|
-echo   ^|                                                     ^|
-echo   ^|  Frontend : http://localhost:%WEB_PORT%             ^|
-echo   ^|  API Docs : http://localhost:%SERVER_PORT%/swagger-ui.html
-echo   ^|  Login    : admin / admin123                       ^|
-echo   ^|                                                     ^|
-echo   ^|  stop.bat  - Stop all services                     ^|
-echo   ^|  start.bat status - Check status                   ^|
-echo   ========================================================
-echo.
-echo   Press any key to open browser...
-pause
-start http://localhost:%WEB_PORT%
-goto :end
-
-
-:: ===================== checkPrereqs =========================
-:checkPrereqs
-echo  [1/5] Checking environment...
-echo.
-
-:: Java 17+
 where java >nul 2>&1
-if errorlevel 1 (
-    echo   [FAIL] Java not found. Install JDK 17+
-    echo          https://adoptium.net/
+if !errorlevel! neq 0 (
+    echo [错误] 未找到 Java，请安装 JDK 17+ 并配置 PATH
     pause
     exit /b 1
 )
-echo   [OK] Java
+echo       Java     - OK
 
-:: Maven - prefer system mvn, fall back to project mvnw
-set "MVN_CMD="
 where mvn >nul 2>&1
-if not errorlevel 1 (
-    set "MVN_CMD=mvn"
+if !errorlevel! neq 0 (
+    echo [错误] 未找到 Maven，请安装并配置 PATH
+    pause
+    exit /b 1
 )
-:: Fix 4: nested if instead of else if
-if "%MVN_CMD%"=="" (
-    if exist "warehouse-server\mvnw.cmd" (
-        set "MVN_CMD=warehouse-server\mvnw.cmd"
+echo       Maven    - OK
+
+where node >nul 2>&1
+if !errorlevel! neq 0 (
+    echo [错误] 未找到 Node.js，请安装 Node.js 16+
+    pause
+    exit /b 1
+)
+echo       Node.js  - OK
+
+where npm >nul 2>&1
+if !errorlevel! neq 0 (
+    echo [错误] 未找到 npm
+    pause
+    exit /b 1
+)
+echo       npm      - OK
+
+where mysql >nul 2>&1
+if !errorlevel! neq 0 (
+    echo       MySQL客户端 - 未找到(可忽略，将通过服务管理)
+) else (
+    echo       MySQL客户端 - OK
+)
+
+echo.
+
+:: ============================================================
+:: 2. 启动 MySQL
+:: ============================================================
+echo [2/7] 检查 MySQL 服务...
+
+sc query %MYSQL_SERVICE% >nul 2>&1
+if !errorlevel! neq 0 (
+    echo [警告] 未找到 MySQL 服务 "%MYSQL_SERVICE%", 请确认服务名称
+    echo         如果 MySQL 服务名称不同，请修改脚本中的 MYSQL_SERVICE 变量
+    echo         继续前请确保 MySQL 已手动启动...
+    pause
+) else (
+    sc query %MYSQL_SERVICE% | findstr /C:"RUNNING" >nul 2>&1
+    if !errorlevel! neq 0 (
+        echo       MySQL 服务未运行，正在启动...
+        net start %MYSQL_SERVICE%
+        if !errorlevel! neq 0 (
+            echo [错误] MySQL 服务启动失败，请手动启动后重试
+            pause
+            exit /b 1
+        )
+        echo       MySQL 服务已启动
+        timeout /t 3 /nobreak >nul
+    ) else (
+        echo       MySQL 服务已运行
     )
 )
-if "%MVN_CMD%"=="" (
-    echo   [FAIL] Maven not found
-    echo          https://maven.apache.org/
-    pause
-    exit /b 1
-)
-echo   [OK] Maven
 
-:: Node.js
-where node >nul 2>&1
-if errorlevel 1 (
-    echo   [FAIL] Node.js not found. Install Node.js 18+
-    echo          https://nodejs.org/
-    pause
-    exit /b 1
-)
-echo   [OK] Node.js
+echo.
 
-:: MySQL
-mysqladmin -h%MYSQL_HOST% -P%MYSQL_PORT% -u%MYSQL_USER% -p%MYSQL_PASS% ping >nul 2>&1
-if errorlevel 1 (
-    echo   [WARN] MySQL not reachable (%MYSQL_HOST%:%MYSQL_PORT%)
-    echo          Check: service running / firewall / credentials
-    echo.
+:: ============================================================
+:: 3. 启动 Redis
+:: ============================================================
+echo [3/7] 检查 Redis 服务...
+
+sc query %REDIS_SERVICE% >nul 2>&1
+if !errorlevel! neq 0 (
+    echo [警告] 未找到 Redis 服务 "%REDIS_SERVICE%"
+    echo         请确保 Redis 已手动启动在 localhost:6379
 ) else (
-    echo   [OK] MySQL (%MYSQL_HOST%:%MYSQL_PORT%)
-)
-
-:: Redis
-redis-cli -h %REDIS_HOST% -p %REDIS_PORT% ping >nul 2>&1
-if errorlevel 1 (
-    echo   [WARN] Redis not running (%REDIS_HOST%:%REDIS_PORT%)
-    echo          Start it: redis-server or net start Redis
-    echo.
-) else (
-    echo   [OK] Redis (%REDIS_HOST%:%REDIS_PORT%)
+    sc query %REDIS_SERVICE% | findstr /C:"RUNNING" >nul 2>&1
+    if !errorlevel! neq 0 (
+        echo       Redis 服务未运行，正在启动...
+        net start %REDIS_SERVICE%
+        if !errorlevel! neq 0 (
+            echo [错误] Redis 服务启动失败，请手动启动后重试
+            pause
+            exit /b 1
+        )
+        echo       Redis 服务已启动
+    ) else (
+        echo       Redis 服务已运行
+    )
 )
 
 echo.
-echo   Environment check done.
-exit /b 0
 
+:: ============================================================
+:: 4. 初始化数据库（仅在数据库不存在时执行）
+:: ============================================================
+echo [4/7] 检查数据库初始化...
 
-:: ===================== setupDatabase ========================
-:setupDatabase
-echo  [2/5] Initializing database...
-
-:: Create database
-mysql -h%MYSQL_HOST% -P%MYSQL_PORT% -u%MYSQL_USER% -p%MYSQL_PASS% -e "CREATE DATABASE IF NOT EXISTS %MYSQL_DB% DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>nul
-if errorlevel 1 (
-    echo   [FAIL] Cannot connect to MySQL
-    echo          Check credentials at top of this script
-    pause
-    exit /b 1
-)
-echo   Database ready
-
-:: Import schema
-mysql -h%MYSQL_HOST% -P%MYSQL_PORT% -u%MYSQL_USER% -p%MYSQL_PASS% %MYSQL_DB% < "sql\01-schema.sql" 2>nul
-if errorlevel 1 (
-    echo   [WARN] Schema import - tables may already exist
+set "DB_INITIALIZED=0"
+where mysql >nul 2>&1
+if !errorlevel! equ 0 (
+    mysql -u root -p123456 -e "USE warehouse;" >nul 2>&1
+    if !errorlevel! neq 0 (
+        echo       数据库未初始化，正在执行 SQL 脚本...
+        for %%f in ("%SQL_DIR%\01-schema.sql" "%SQL_DIR%\02-seed.sql" "%SQL_DIR%\03-demo-data.sql") do (
+            echo       执行: %%~nxf ...
+            mysql -u root -p123456 < "%%f" 2>nul
+            if !errorlevel! neq 0 (
+                echo [警告] %%~nxf 执行失败，可能需要手动导入
+            ) else (
+                echo       %%~nxf 执行完成
+            )
+        )
+        set "DB_INITIALIZED=1"
+    ) else (
+        echo       数据库已存在，跳过初始化
+    )
 ) else (
-    echo   Tables created (19)
+    echo       未找到 mysql 客户端，跳过自动初始化
+    echo       请确保 warehouse 数据库已手动创建并导入 SQL 脚本
 )
 
-:: Import seed data
-mysql -h%MYSQL_HOST% -P%MYSQL_PORT% -u%MYSQL_USER% -p%MYSQL_PASS% %MYSQL_DB% < "sql\02-seed.sql" 2>nul
-if errorlevel 1 (
-    echo   [WARN] Seed import - may already exist
-) else (
-    echo   Seed data imported
-)
-
-echo   Login: admin / admin123
 echo.
-echo   Database setup done.
-exit /b 0
 
+:: ============================================================
+:: 5. 构建后端
+:: ============================================================
+echo [5/7] 构建后端服务...
 
-:: ===================== setupFrontend ========================
-:setupFrontend
-echo  [3/5] Installing frontend dependencies...
-cd /d "%~dp0warehouse-web"
-if errorlevel 1 (
-    echo   [FAIL] Cannot find warehouse-web directory
-    cd /d "%~dp0"
-    pause
-    exit /b 1
+set "JAR_FOUND=0"
+for %%f in ("%SERVER_DIR%\target\warehouse-server-*.jar") do (
+    set "JAR_PATH=%%f"
+    set "JAR_FOUND=1"
 )
 
-if not exist "node_modules\" (
-    echo   First run - installing packages (1-2 min)...
-    echo.
-    call npm install
-    if errorlevel 1 (
-        echo.
-        echo   [FAIL] npm install failed
-        echo          Check network connection and Node.js
-        cd /d "%~dp0"
+if "!JAR_FOUND!"=="1" (
+    echo       检测到已有构建产物，跳过构建
+    echo       如需重新构建，请先删除 target 目录或运行: mvn clean package
+) else (
+    echo       未检测到构建产物，正在执行 Maven 构建...
+    echo       首次构建可能需要下载依赖，请耐心等待...
+    pushd "%SERVER_DIR%"
+    call mvn clean package -DskipTests -q
+    if !errorlevel! neq 0 (
+        echo [错误] Maven 构建失败，请检查错误信息
+        popd
         pause
         exit /b 1
     )
-    echo   Packages installed.
+    popd
+
+    for %%f in ("%SERVER_DIR%\target\warehouse-server-*.jar") do (
+        set "JAR_PATH=%%f"
+    )
+
+    if not defined JAR_PATH (
+        echo [错误] 构建完成但未找到 JAR 文件
+        pause
+        exit /b 1
+    )
+    echo       构建完成
+)
+
+echo.
+
+:: ============================================================
+:: 6. 启动后端服务
+:: ============================================================
+echo [6/7] 启动后端服务（端口 %BACKEND_PORT%）...
+
+netstat -ano | findstr ":%BACKEND_PORT% " | findstr "LISTENING" >nul 2>&1
+if !errorlevel! equ 0 (
+    echo [警告] 端口 %BACKEND_PORT% 已被占用，后端服务可能已在运行
+    echo         如需重启，请先运行 stop.bat
+    echo.
 ) else (
-    echo   Dependencies already installed.
+    start "Warehouse-Backend" cmd /k "cd /d !SERVER_DIR! && java -jar "!JAR_PATH!" --spring.profiles.active=dev"
+    echo       后端服务正在启动，等待...
+    timeout /t 8 /nobreak >nul
 )
 
-cd /d "%~dp0"
 echo.
-exit /b 0
 
+:: ============================================================
+:: 7. 启动前端服务
+:: ============================================================
+echo [7/7] 启动前端服务（端口 %FRONTEND_PORT%）...
 
-:: ===================== startBackend =========================
-:startBackend
-echo  [4/5] Starting backend (Spring Boot)...
-
-:: Check if already running
-powershell -Command "try{$r=Invoke-WebRequest -Uri 'http://localhost:%SERVER_PORT%/v3/api-docs' -TimeoutSec 2 -UseBasicParsing;exit 0}catch{exit 1}" >nul 2>&1
-if not errorlevel 1 (
-    echo   Backend already running, skip.
-    exit /b 0
+if not exist "%WEB_DIR%\node_modules" (
+    echo       首次运行，正在安装前端依赖...
+    pushd "%WEB_DIR%"
+    call npm install
+    if !errorlevel! neq 0 (
+        echo [错误] 前端依赖安装失败
+        popd
+        pause
+        exit /b 1
+    )
+    popd
+    echo       依赖安装完成
+) else (
+    echo       前端依赖已就绪
 )
 
-cd /d "%~dp0warehouse-server"
-if errorlevel 1 (
-    echo   [FAIL] Cannot find warehouse-server directory
-    cd /d "%~dp0"
-    pause
-    exit /b 1
+netstat -ano | findstr ":%FRONTEND_PORT% " | findstr "LISTENING" >nul 2>&1
+if !errorlevel! equ 0 (
+    echo [警告] 端口 %FRONTEND_PORT% 已被占用，前端服务可能已在运行
+    echo         如需重启，请先运行 stop.bat
+) else (
+    start "Warehouse-Frontend" cmd /k "cd /d !WEB_DIR! && npm run dev"
+    echo       前端服务正在启动...
 )
 
-:: Launch backend in a new minimized window
-start "WMS-Backend" /min cmd /c "echo Starting Spring Boot... && %MVN_CMD% spring-boot:run && pause"
-
-:: Wait for it to be ready (max 180s)
-echo   Waiting for backend (first compile ~1-3 min)...
-set COUNT=0
-:waitServer
-timeout /t 3 /nobreak >nul
-set /a COUNT=%COUNT%+1
-
-powershell -Command "try{$r=Invoke-WebRequest -Uri 'http://localhost:%SERVER_PORT%/v3/api-docs' -TimeoutSec 2 -UseBasicParsing;exit 0}catch{exit 1}" >nul 2>&1
-if not errorlevel 1 goto :serverReady
-
-if %COUNT% geq 60 (
-    echo   [WARN] Backend startup timeout (3 min)
-    echo          Check the WMS-Backend window for errors
-    cd /d "%~dp0"
-    pause
-    exit /b 1
-)
-echo   Still waiting... (%COUNT%/60)
-goto :waitServer
-
-:serverReady
-echo   [OK] Backend ready: http://localhost:%SERVER_PORT%
-echo   API docs: http://localhost:%SERVER_PORT%/swagger-ui.html
-cd /d "%~dp0"
 echo.
-exit /b 0
-
-
-:: ===================== startFrontend ========================
-:startFrontend
-echo  [5/5] Starting frontend (Vite)...
-
-:: Check if already running
-powershell -Command "try{$r=Invoke-WebRequest -Uri 'http://localhost:%WEB_PORT%' -TimeoutSec 2 -UseBasicParsing;exit 0}catch{exit 1}" >nul 2>&1
-if not errorlevel 1 (
-    echo   Frontend already running, skip.
-    exit /b 0
-)
-
-cd /d "%~dp0warehouse-web"
-if errorlevel 1 (
-    echo   [FAIL] Cannot find warehouse-web directory
-    cd /d "%~dp0"
-    pause
-    exit /b 1
-)
-
-:: Launch frontend in a new minimized window
-start "WMS-Frontend" /min cmd /c "echo WMS Frontend && echo http://localhost:%WEB_PORT% && echo. && npm run dev"
-
-:: Wait for it to be ready
-echo   Waiting for frontend...
-set COUNT=0
-:waitWeb
-timeout /t 2 /nobreak >nul
-set /a COUNT=%COUNT%+1
-
-powershell -Command "try{$r=Invoke-WebRequest -Uri 'http://localhost:%WEB_PORT%' -TimeoutSec 2 -UseBasicParsing;exit 0}catch{exit 1}" >nul 2>&1
-if not errorlevel 1 goto :webReady
-
-if %COUNT% geq 25 (
-    echo   [WARN] Frontend startup timeout
-    echo          Check the WMS-Frontend window for errors
-    cd /d "%~dp0"
-    pause
-    exit /b 1
-)
-goto :waitWeb
-
-:webReady
-echo   [OK] Frontend ready: http://localhost:%WEB_PORT%
-cd /d "%~dp0"
+echo ============================================================
+echo   所有服务启动完成！
+echo ============================================================
 echo.
-exit /b 0
-
-
-:: ===================== stopServices =========================
-:stopServices
-echo   Stopping WMS services...
-taskkill /fi "WINDOWTITLE eq WMS-Backend*" /f >nul 2>&1
-taskkill /fi "WINDOWTITLE eq WMS-Frontend*" /f >nul 2>&1
-
-for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":8080.*LISTENING" 2^>nul') do (
-    taskkill /pid %%a /f >nul 2>&1
-)
-for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":5173.*LISTENING" 2^>nul') do (
-    taskkill /pid %%a /f >nul 2>&1
-)
-echo   [OK] All services stopped.
-exit /b 0
-
-
-:: ===================== checkStatus ==========================
-:checkStatus
-echo   Service Status:
-echo   -------------------------------------------------
-powershell -Command "$s='stopped';try{$r=Invoke-WebRequest -Uri 'http://localhost:%SERVER_PORT%/v3/api-docs' -TimeoutSec 2 -UseBasicParsing;$s='RUNNING'}catch{};Write-Host ('   Backend  :%SERVER_PORT%   ['+$s+']')"
-powershell -Command "$s='stopped';try{$r=Invoke-WebRequest -Uri 'http://localhost:%WEB_PORT%' -TimeoutSec 2 -UseBasicParsing;$s='RUNNING'}catch{};Write-Host ('   Frontend :%WEB_PORT%   ['+$s+']')"
-echo   -------------------------------------------------
-echo   Login: admin / admin123
-exit /b 0
-
-
-:: ======================== END ===============================
-:end
+echo   后端地址:  http://localhost:%BACKEND_PORT%
+echo   API文档:   http://localhost:%BACKEND_PORT%/swagger-ui.html
+echo   前端地址:  http://localhost:%FRONTEND_PORT%
 echo.
-echo   Press any key to close...
+echo   要停止所有服务，请运行: stop.bat
+echo   或关闭对应窗口即可
+echo ============================================================
 pause
