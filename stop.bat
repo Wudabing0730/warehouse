@@ -1,29 +1,32 @@
 @echo off
-chcp 65001 >nul
-title 仓库管理系统 - 停止服务
+setlocal
 
+:: Force UTF-8 codepage
+chcp 65001 >nul 2>&1
+
+title WMS - Stop Services
 echo.
-echo   ╔══════════════════════════════════════════════════╗
-echo   ║          仓库管理系统 - 停止所有服务               ║
-echo   ╚══════════════════════════════════════════════════╝
+echo  +========================================================+
+echo  ^|          Warehouse Management System - STOP            ^|
+echo  +========================================================+
 echo.
 
-echo   正在停止 WMS 后端服务...
-taskkill /fi "WINDOWTITLE eq WMS-Backend*" /f 2>nul
+echo    Stopping WMS services...
 
-echo   正在停止 WMS 前端服务...
-taskkill /fi "WINDOWTITLE eq WMS-Frontend*" /f 2>nul
+taskkill /fi "WINDOWTITLE eq WMS-Backend*" /f >nul 2>&1
+taskkill /fi "WINDOWTITLE eq WMS-Frontend*" /f >nul 2>&1
 
-echo   释放端口 8080 / 5173...
+echo    Releasing ports 8080 / 5173...
 for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":8080.*LISTENING" 2^>nul') do (
-    taskkill /pid %%a /f 2>nul
+    taskkill /pid %%a /f >nul 2>&1
 )
 for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":5173.*LISTENING" 2^>nul') do (
-    taskkill /pid %%a /f 2>nul
+    taskkill /pid %%a /f >nul 2>&1
 )
 
 echo.
-echo   [√] 所有 WMS 服务已停止。
+echo   [OK] All WMS services stopped.
 echo.
-echo   按任意键关闭...
+echo   Press any key to close...
 pause >nul
+endlocal
