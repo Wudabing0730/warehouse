@@ -10,6 +10,7 @@ import com.warehouse.dto.request.RoleQueryDTO;
 import com.warehouse.dto.request.RoleUpdateDTO;
 import com.warehouse.dto.response.RoleVO;
 import com.warehouse.entity.Role;
+import com.warehouse.entity.RolePermission;
 import com.warehouse.mapper.RoleMapper;
 import com.warehouse.mapper.RolePermissionMapper;
 import com.warehouse.service.RoleService;
@@ -132,10 +133,10 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
         vo.setUpdateTime(role.getUpdateTime());
 
         List<Long> permissionIds = rolePermissionMapper.selectList(
-                new LambdaQueryWrapper<com.warehouse.entity.RolePermission>()
-                        .eq(com.warehouse.entity.RolePermission::getRoleId, role.getRoleId())
+                new LambdaQueryWrapper<RolePermission>()
+                        .eq(RolePermission::getRoleId, role.getRoleId())
         ).stream()
-                .map(com.warehouse.entity.RolePermission::getPermissionId)
+                .map(RolePermission::getPermissionId)
                 .collect(Collectors.toList());
         vo.setPermissionIds(permissionIds);
 
