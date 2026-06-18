@@ -22,7 +22,7 @@ cd /d "%~dp0"
 set "MYSQL_HOST=localhost"
 set "MYSQL_PORT=3306"
 set "MYSQL_USER=root"
-set "MYSQL_PASS=root"
+set "MYSQL_PASS=123456"
 set "MYSQL_DB=warehouse"
 set "REDIS_HOST=localhost"
 set "REDIS_PORT=6379"
@@ -38,9 +38,18 @@ echo  +========================================================+
 echo.
 
 :: ===================== Command Dispatch =====================
-if /i "%~1"=="stop"  (call :stopServices & goto :end)
-if /i "%~1"=="status" (call :checkStatus & goto :end)
-if /i "%~1"=="db"     (call :setupDatabase & goto :end)
+if /i "%~1"=="stop" (
+    call :stopServices
+    goto :end
+)
+if /i "%~1"=="status" (
+    call :checkStatus
+    goto :end
+)
+if /i "%~1"=="db" (
+    call :setupDatabase
+    goto :end
+)
 
 :: ==================== Full Launch Flow ======================
 call :checkPrereqs   || goto :end
@@ -63,7 +72,7 @@ echo  +========================================================+
 echo.
 echo    Press any key to open browser...
 
-pause >nul
+pause
 start http://localhost:%WEB_PORT%
 goto :end
 
@@ -312,5 +321,5 @@ exit /b 0
 :end
 echo.
 echo    Press any key to close...
-pause >nul
+pause
 endlocal
