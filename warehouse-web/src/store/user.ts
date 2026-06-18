@@ -35,7 +35,7 @@ export const useUserStore = defineStore('user', () => {
       username: usernameParam,
       password,
     })
-    const { accessToken: at, refreshToken: rt, userInfo } = response
+    const { accessToken: at, refreshToken: rt, userInfo } = response.data
     accessToken.value = at
     refreshToken.value = rt
     persistTokens()
@@ -70,8 +70,8 @@ export const useUserStore = defineStore('user', () => {
       const response: any = await service.post('/auth/refresh', {
         refreshToken: rt,
       })
-      accessToken.value = response.accessToken
-      refreshToken.value = response.refreshToken
+      accessToken.value = response.data.accessToken
+      refreshToken.value = response.data.refreshToken
       persistTokens()
     } catch {
       clearState()
