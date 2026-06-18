@@ -1,8 +1,9 @@
 package com.warehouse.security;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.warehouse.entity.User;
 import com.warehouse.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -18,14 +19,17 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        com.warehouse.entity.User user = userMapper.selectByUsername(username);
+        User user = userMapper.selectOne(
+                new LambdaQueryWrapper<User>().eq(User::getUsername, username));
         if (user == null) {
             throw new UsernameNotFoundException("User not found: " + username);
         }
 
-        return new User(
-                String.valueOf(user.getId()),
+        return new org.springframework.security.core.userdetails.User(
+                String.valueOf(user.getUserId()),
                 user.getPassword(),
+                user.getStatus() != null && user.getStatus() == 1,
+                true, true, true,
                 new ArrayList<>()
         );
     }

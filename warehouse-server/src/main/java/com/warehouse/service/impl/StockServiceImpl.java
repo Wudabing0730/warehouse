@@ -19,7 +19,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +37,7 @@ public class StockServiceImpl extends ServiceImpl<StockMapper, Stock> implements
     private WarehouseLocationMapper warehouseLocationMapper;
 
     @Resource
-    private StringRedisTemplate redisTemplate;
+    private StringRedisTemplate stringRedisTemplate;
 
     @Override
     public IPage<StockVO> page(Page<Stock> page, StockQueryDTO query) {
@@ -89,12 +89,12 @@ public class StockServiceImpl extends ServiceImpl<StockMapper, Stock> implements
 
     @Override
     public List<StockVO> getAlerts() {
-        List<String> messages = redisTemplate.opsForList().range(STOCK_ALERT_QUEUE_KEY, 0, -1);
+        List<String> messages = stringRedisTemplate.opsForList().range(STOCK_ALERT_QUEUE_KEY, 0, -1);
         if (messages == null || messages.isEmpty()) {
             return new ArrayList<>();
         }
         // Trim the queue to remove all consumed messages
-        redisTemplate.opsForList().trim(STOCK_ALERT_QUEUE_KEY, messages.size(), -1);
+        stringRedisTemplate.opsForList().trim(STOCK_ALERT_QUEUE_KEY, messages.size(), -1);
 
         return messages.stream().map(msg -> {
             StockVO vo = new StockVO();

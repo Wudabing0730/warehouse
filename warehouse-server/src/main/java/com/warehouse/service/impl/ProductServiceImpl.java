@@ -21,7 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -139,7 +139,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         if (product.getDefaultLocationId() != null) {
             WarehouseLocation location = warehouseLocationMapper.selectById(product.getDefaultLocationId());
             if (location != null) {
-                vo.setLocationName(location.getLocationName());
+                vo.setDefaultLocationName(location.getLocationName());
             }
         }
         return vo;
