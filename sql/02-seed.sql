@@ -16,7 +16,7 @@ INSERT INTO t_role (role_name, role_desc) VALUES
 -- 预置管理员账号 (密码: admin123, BCrypt加密)
 -- BCrypt(10轮): admin123
 INSERT INTO t_user (username, password, real_name, status)
-VALUES ('admin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', '系统管理员', 1);
+VALUES ('admin', '$2b$10$7YgJw5khn76f0wSr4P.65OYlwEoG1VbkZeixDgBAi1xnNa1I0SfI2', '系统管理员', 1);
 
 INSERT INTO t_user_role (user_id, role_id) VALUES (1, 1);
 

@@ -5,7 +5,7 @@
 -- 密码说明：
 --   admin / admin123 (预置管理员, 02-seed.sql 已包含)
 --   以下新增用户的密码均为: test123
---   BCrypt(10轮): test123 = $2a$10$7U.jxMB7m0YPhRjF.hPjMejFQKjLcO1xLZ5kqLmCqP.CDaNUmC9GO
+--   BCrypt(10轮): test123 = $2b$10$FGk2mtY5DGUjHpQQsZHM0utPFtNiLvs.7NjFj/nknK557Ium9bnHm
 -- ============================================================
 
 USE warehouse;
@@ -97,11 +97,11 @@ INSERT INTO t_product (product_id, product_code, product_name, category_id, unit
 --    BCrypt(10轮): test123
 -- ============================================================
 INSERT INTO t_user (user_id, username, password, real_name, phone, email, status) VALUES
-(2, 'warehouse1', '$2a$10$7U.jxMB7m0YPhRjF.hPjMejFQKjLcO1xLZ5kqLmCqP.CDaNUmC9GO', '李仓管',  '13800001101', 'warehouse1@demo.com', 1),
-(3, 'purchaser1', '$2a$10$7U.jxMB7m0YPhRjF.hPjMejFQKjLcO1xLZ5kqLmCqP.CDaNUmC9GO', '张采购',  '13800001102', 'purchaser1@demo.com', 1),
-(4, 'sales1',     '$2a$10$7U.jxMB7m0YPhRjF.hPjMejFQKjLcO1xLZ5kqLmCqP.CDaNUmC9GO', '王销售',  '13800001103', 'sales1@demo.com',     1),
-(5, 'borrower1',  '$2a$10$7U.jxMB7m0YPhRjF.hPjMejFQKjLcO1xLZ5kqLmCqP.CDaNUmC9GO', '赵借用',  '13800001104', 'borrower1@demo.com',  1),
-(6, 'manager1',   '$2a$10$7U.jxMB7m0YPhRjF.hPjMejFQKjLcO1xLZ5kqLmCqP.CDaNUmC9GO', '陈经理',  '13800001105', 'manager1@demo.com',   1);
+(2, 'warehouse1', '$2b$10$FGk2mtY5DGUjHpQQsZHM0utPFtNiLvs.7NjFj/nknK557Ium9bnHm', '李仓管',  '13800001101', 'warehouse1@demo.com', 1),
+(3, 'purchaser1', '$2b$10$FGk2mtY5DGUjHpQQsZHM0utPFtNiLvs.7NjFj/nknK557Ium9bnHm', '张采购',  '13800001102', 'purchaser1@demo.com', 1),
+(4, 'sales1',     '$2b$10$FGk2mtY5DGUjHpQQsZHM0utPFtNiLvs.7NjFj/nknK557Ium9bnHm', '王销售',  '13800001103', 'sales1@demo.com',     1),
+(5, 'borrower1',  '$2b$10$FGk2mtY5DGUjHpQQsZHM0utPFtNiLvs.7NjFj/nknK557Ium9bnHm', '赵借用',  '13800001104', 'borrower1@demo.com',  1),
+(6, 'manager1',   '$2b$10$FGk2mtY5DGUjHpQQsZHM0utPFtNiLvs.7NjFj/nknK557Ium9bnHm', '陈经理',  '13800001105', 'manager1@demo.com',   1);
 
 -- 用户-角色关联
 INSERT INTO t_user_role (user_id, role_id) VALUES
