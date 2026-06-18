@@ -116,8 +116,8 @@ const fetchList = async () => {
   loading.value = true
   try {
     const params: Record<string, any> = {
-      pageNum: pagination.pageNum,
-      pageSize: pagination.pageSize,
+      page: pagination.pageNum,
+      size: pagination.pageSize,
     }
     if (searchForm.locationCode) params.locationCode = searchForm.locationCode
     if (searchForm.locationName) params.locationName = searchForm.locationName
