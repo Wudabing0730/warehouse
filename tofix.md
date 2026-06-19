@@ -318,7 +318,33 @@
 
 ## P3 — 低优(后续优化)
 
-### ⏳ P3-1 【测试覆盖】后端几乎无功能测试
+### ✅ P3-1 【测试覆盖】后端核心业务功能测试 — ✅ 已完成
+- **现状**:
+  - 修复阶段已写 25 个测试(纯契约/源码断言)
+  - 真实业务功能(JWT 签发、密码编码、单据号生成)无功能测试
+- **本次新增 19 个 case,聚焦三大核心(无 DB 依赖,纯业务逻辑)**:
+  - `JwtTokenProviderTest`(7 case)
+    - 生成的 token 验证通过
+    - userId / username round-trip
+    - jti 非空 + 不同 token jti 不同
+    - expiration 在 1 分钟窗口内
+    - 非法 token validate 失败
+  - `OrderNoGeneratorTest`(7 case)
+    - RK / CK / JJ / PD 四种前缀都正确
+    - 包含今天 yyyyMMdd
+    - 总长度 14(prefix 2 + date 8 + seq 4)
+    - 100 次 fallback 随机产生多个不同结果
+  - `PasswordEncoderContractTest`(5 case)
+    - BCryptPasswordEncoder 强度 10
+    - 同一明文两次 hash 不同(盐值随机)
+    - matches(明文, hash) 正确 / 错误密码双向验证
+    - 02-seed.sql 中 admin 账号的 hash 能验证明文 admin123
+- **测试统计**:
+  - 后端:44 个 case(原 25 + 新增 19)
+  - 前端:126 个 case
+  - **全栈 170 个测试全部通过** ✅
+- **状态**: ✅ 已完成
+
 ### ⏳ P3-2 【仪表盘】无图表可视化
 
 ---
