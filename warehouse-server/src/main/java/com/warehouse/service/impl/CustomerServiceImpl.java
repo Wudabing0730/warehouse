@@ -89,8 +89,7 @@ public class CustomerServiceImpl extends ServiceImpl<CustomerMapper, Customer> i
         if (customer == null) {
             throw new BusinessException(404, "客户不存在");
         }
-        customer.setStatus(0);
-        baseMapper.updateById(customer);
+        baseMapper.deleteById(customerId);
     }
 
     @Override

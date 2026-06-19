@@ -106,14 +106,13 @@ public class WarehouseLocationServiceImpl extends ServiceImpl<WarehouseLocationM
         if (location == null) {
             throw new BusinessException(404, "库位不存在");
         }
-        // Check no products reference this location as default_location_id
+        // Check no products reference this location as default_location_id (FK 引用检查保留)
         QueryWrapper<Product> productWrapper = new QueryWrapper<>();
         productWrapper.eq("default_location_id", locationId);
         if (productMapper.selectCount(productWrapper) > 0) {
             throw new BusinessException(400, "该库位被产品引用，无法删除");
         }
-        location.setStatus(0);
-        baseMapper.updateById(location);
+        baseMapper.deleteById(locationId);
     }
 
     @Override

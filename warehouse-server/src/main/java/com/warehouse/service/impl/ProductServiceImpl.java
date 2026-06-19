@@ -116,8 +116,7 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         if (product == null) {
             throw new BusinessException(404, "产品不存在");
         }
-        product.setStatus(0);
-        baseMapper.updateById(product);
+        baseMapper.deleteById(productId);
     }
 
     @Override

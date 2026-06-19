@@ -89,8 +89,7 @@ public class SupplierServiceImpl extends ServiceImpl<SupplierMapper, Supplier> i
         if (supplier == null) {
             throw new BusinessException(404, "供应商不存在");
         }
-        supplier.setStatus(0);
-        baseMapper.updateById(supplier);
+        baseMapper.deleteById(supplierId);
     }
 
     @Override
