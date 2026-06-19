@@ -35,7 +35,7 @@ class PermissionAnnotationConsistencyTest {
             // dashboard & 系统管理
             "dashboard", "dashboard:view",
             "system", "system:user", "system:user:list", "system:user:create",
-            "system:user:edit", "system:user:delete",
+            "system:user:edit", "system:user:delete", "system:user:resetPassword",
             "system:role", "system:role:list", "system:role:create",
             "system:role:edit", "system:role:delete", "system:role:assign",
             "system:permission", "system:permission:list",

@@ -274,7 +274,30 @@
   - 后端 `VoJsonAliasTest` 10/10 通过,无回归 ✅
 - **状态**: ✅ 已修复
 
-### ⏳ P2-3 【JWT 过滤器】未放行 OPTIONS 预检
+### ✅ P2-3 【JWT 过滤器】未放行 OPTIONS 预检 — ✅ 已修复
+- **现象**:前端所有跨域带 JWT 的请求被 CORS 拦截,浏览器 console 报
+  `Response to preflight request doesn't pass access control check`
+- **根因**:
+  - 浏览器对跨域自定义请求(带 `Authorization` header)会先发 OPTIONS 预检
+  - 预检请求**不带** `Authorization` header
+  - `JwtAuthenticationFilter.doFilterInternal` 在 header 缺失时直接 401
+  - `SecurityConfig.authorizeHttpRequests` 也没有 permitAll OPTIONS
+  - 两道关卡都把预检请求挡死
+- **修复**(两道保险):
+  - `JwtAuthenticationFilter.shouldNotFilter` 在 `request.getMethod() == "OPTIONS"` 时返回 `true`
+  - `SecurityConfig.securityFilterChain` 加 `requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()`
+  - 预检由 CorsConfig 处理的 CORS 头 + Security 放行 + JWT 跳过,完整放行
+- **测试**: `warehouse-server/src/test/java/com/warehouse/security/JwtOptionsPreflightBypassTest.java`(4 个 case)
+  - 反射调 `shouldNotFilter(OPTIONS 请求)` 断言返回 `true`
+  - 反射读 `JwtAuthenticationFilter.java` 源码断言 `shouldNotFilter` 方法体含 `OPTIONS` 关键字
+  - 反射读 `SecurityConfig.java` 源码断言含 `HttpMethod.OPTIONS` + `permitAll`
+  - 验证 `SecurityConfig.securityFilterChain` 方法有 `@Bean` 注解
+  - **反向证明**:把 `shouldNotFilter` 里的 OPTIONS 短路注释掉 → 2 个 case 失败;把 `SecurityConfig` 的 OPTIONS 放行删掉 → 1 个 case 失败
+  - 恢复后 `Tests run: 4, Failures: 0` ✅
+- **回归**: 全栈 22 后端 + 126 前端测试全过 ✅
+- **状态**: ✅ 已修复
+- **关联修复**: 同步给 `sql/02-seed.sql` 补了 `system:user:resetPassword` 权限(P1-5 端点对应的种子数据遗漏),`PermissionAnnotationConsistencyTest.SEED_PERMISSION_CODES` 同步补全
+
 ### ⏳ P2-4 【种子数据】`parent_id` 依赖 AUTO_INCREMENT 顺序
 
 ## P3 — 低优(后续优化)

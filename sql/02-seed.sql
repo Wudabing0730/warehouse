@@ -42,6 +42,8 @@ INSERT INTO t_permission (permission_code, permission_name, resource_type, paren
 ('system:user:create', '创建用户', 'button', 4),
 ('system:user:edit', '编辑用户', 'button', 4),
 ('system:user:delete', '删除用户', 'button', 4),
+-- P1-5: 管理员重置密码专用权限(与 PUT /users/{id}/password/reset 端点对应)
+('system:user:resetPassword', '重置密码', 'button', 4),
 ('system:role', '角色管理', 'menu', 3),
 ('system:role:list', '角色列表', 'button', 9),
 ('system:role:create', '创建角色', 'button', 9),

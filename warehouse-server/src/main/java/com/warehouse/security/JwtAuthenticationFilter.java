@@ -41,6 +41,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
+        // P2-3: CORS 预检 OPTIONS 请求没有 Authorization header,如果走完整 doFilterInternal
+        // 会被直接 401 拦截,导致前端所有跨域带 JWT 的请求失败。
+        // 预检请求由 CorsConfig / Security 层的 permitAll 处理,JWT 过滤器必须直接放行。
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
         String path = request.getServletPath();
         return SKIP_PATHS.stream().anyMatch(pattern -> pathMatcher.match(pattern, path));
     }
