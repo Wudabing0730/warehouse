@@ -127,6 +127,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException(400, "用户名已存在");
         }
 
+        if (dto.getRoleIds() != null && !dto.getRoleIds().isEmpty()) {
+            Long roleExistCount = roleMapper.selectCount(
+                    new LambdaQueryWrapper<Role>().in(Role::getRoleId, dto.getRoleIds())
+            );
+            if (roleExistCount < dto.getRoleIds().size()) {
+                throw new BusinessException(400, "部分角色ID不存在");
+            }
+        }
+
         User user = new User();
         user.setUsername(dto.getUsername());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
@@ -174,6 +183,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         userMapper.updateById(user);
 
         if (dto.getRoleIds() != null) {
+            Long roleExistCount = roleMapper.selectCount(
+                    new LambdaQueryWrapper<Role>().in(Role::getRoleId, dto.getRoleIds())
+            );
+            if (roleExistCount < dto.getRoleIds().size()) {
+                throw new BusinessException(400, "部分角色ID不存在");
+            }
             userRoleMapper.deleteByUserId(userId);
             for (Long roleId : dto.getRoleIds()) {
                 userRoleMapper.insertUserRole(userId, roleId);

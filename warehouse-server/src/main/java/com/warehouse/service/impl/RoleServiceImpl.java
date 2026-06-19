@@ -9,8 +9,10 @@ import com.warehouse.dto.request.RoleCreateDTO;
 import com.warehouse.dto.request.RoleQueryDTO;
 import com.warehouse.dto.request.RoleUpdateDTO;
 import com.warehouse.dto.response.RoleVO;
+import com.warehouse.entity.Permission;
 import com.warehouse.entity.Role;
 import com.warehouse.entity.RolePermission;
+import com.warehouse.mapper.PermissionMapper;
 import com.warehouse.mapper.RoleMapper;
 import com.warehouse.mapper.RolePermissionMapper;
 import com.warehouse.service.RoleService;
@@ -31,6 +33,7 @@ import java.util.stream.Collectors;
 public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements RoleService {
 
     private final RolePermissionMapper rolePermissionMapper;
+    private final PermissionMapper permissionMapper;
 
     @Override
     public IPage<RoleVO> page(Page<Role> page, RoleQueryDTO query) {
@@ -76,6 +79,16 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
     @Override
     @Transactional(rollbackFor = Exception.class)
     public RoleVO create(RoleCreateDTO dto) {
+        if (dto.getPermissionIds() != null && !dto.getPermissionIds().isEmpty()) {
+            Long existCount = permissionMapper.selectCount(
+                    new LambdaQueryWrapper<Permission>()
+                            .in(Permission::getPermissionId, dto.getPermissionIds())
+            );
+            if (existCount < dto.getPermissionIds().size()) {
+                throw new BusinessException(400, "部分权限ID不存在");
+            }
+        }
+
         Role role = new Role();
         role.setRoleName(dto.getRoleName());
         role.setRoleDesc(dto.getRoleDesc());
@@ -111,6 +124,13 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
         baseMapper.updateById(role);
 
         if (dto.getPermissionIds() != null) {
+            Long existCount = permissionMapper.selectCount(
+                    new LambdaQueryWrapper<Permission>()
+                            .in(Permission::getPermissionId, dto.getPermissionIds())
+            );
+            if (existCount < dto.getPermissionIds().size()) {
+                throw new BusinessException(400, "部分权限ID不存在");
+            }
             rolePermissionMapper.deleteByRoleId(roleId);
             for (Long permissionId : dto.getPermissionIds()) {
                 rolePermissionMapper.insertRolePermission(roleId, permissionId);
@@ -134,6 +154,15 @@ public class RoleServiceImpl extends ServiceImpl<RoleMapper, Role> implements Ro
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void assignPermissions(Long roleId, List<Long> permissionIds) {
+        if (permissionIds != null && !permissionIds.isEmpty()) {
+            Long existCount = permissionMapper.selectCount(
+                    new LambdaQueryWrapper<Permission>()
+                            .in(Permission::getPermissionId, permissionIds)
+            );
+            if (existCount < permissionIds.size()) {
+                throw new BusinessException(400, "部分权限ID不存在");
+            }
+        }
         rolePermissionMapper.deleteByRoleId(roleId);
         if (permissionIds != null && !permissionIds.isEmpty()) {
             for (Long permissionId : permissionIds) {
