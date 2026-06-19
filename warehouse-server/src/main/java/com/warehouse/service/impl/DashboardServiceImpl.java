@@ -50,58 +50,98 @@ public class DashboardServiceImpl implements DashboardService {
     public DashboardSummaryVO summary() {
         DashboardSummaryVO vo = new DashboardSummaryVO();
 
+        // P-修复:任一数据源抛异常都不能让整个 dashboard 500,降级为 0/空并记日志
         // 1. 启用商品数
-        Long productCount = productMapper.selectCount(
-                new LambdaQueryWrapper<Product>().eq(Product::getStatus, 1)
-        );
-        vo.setProductCount(productCount == null ? 0L : productCount);
+        try {
+            Long productCount = productMapper.selectCount(
+                    new LambdaQueryWrapper<Product>().eq(Product::getStatus, 1)
+            );
+            vo.setProductCount(productCount == null ? 0L : productCount);
+        } catch (Exception e) {
+            log.error("[Dashboard] productMapper.selectCount 失败,productCount 降级为 0: {}", e.getMessage());
+            vo.setProductCount(0L);
+        }
 
         // 2. 总库存(SUM quantity)
-        List<Stock> allStocks = stockMapper.selectList(null);
-        long total = 0L;
-        for (Stock s : allStocks) {
-            BigDecimal q = s.getQuantity();
-            if (q != null) {
-                total += q.longValue();
+        try {
+            List<Stock> allStocks = stockMapper.selectList(null);
+            long total = 0L;
+            for (Stock s : allStocks) {
+                BigDecimal q = s.getQuantity();
+                if (q != null) {
+                    total += q.longValue();
+                }
             }
+            vo.setTotalStock(total);
+        } catch (Exception e) {
+            log.error("[Dashboard] stockMapper.selectList 失败,totalStock 降级为 0: {}", e.getMessage());
+            vo.setTotalStock(0L);
         }
-        vo.setTotalStock(total);
 
-        // 3. 今日入库单数(00:00 之后创建)
         LocalDateTime startOfToday = LocalDate.now().atStartOfDay();
-        Long todayInbound = inboundOrderMapper.selectCount(
-                new LambdaQueryWrapper<InboundOrder>().ge(InboundOrder::getCreateTime, startOfToday)
-        );
-        vo.setTodayInbound(todayInbound == null ? 0L : todayInbound);
+
+        // 3. 今日入库单数
+        try {
+            Long todayInbound = inboundOrderMapper.selectCount(
+                    new LambdaQueryWrapper<InboundOrder>().ge(InboundOrder::getCreateTime, startOfToday)
+            );
+            vo.setTodayInbound(todayInbound == null ? 0L : todayInbound);
+        } catch (Exception e) {
+            log.error("[Dashboard] inboundOrderMapper.selectCount 失败,todayInbound 降级为 0: {}", e.getMessage());
+            vo.setTodayInbound(0L);
+        }
 
         // 4. 今日出库单数
-        Long todayOutbound = outboundOrderMapper.selectCount(
-                new LambdaQueryWrapper<OutboundOrder>().ge(OutboundOrder::getCreateTime, startOfToday)
-        );
-        vo.setTodayOutbound(todayOutbound == null ? 0L : todayOutbound);
+        try {
+            Long todayOutbound = outboundOrderMapper.selectCount(
+                    new LambdaQueryWrapper<OutboundOrder>().ge(OutboundOrder::getCreateTime, startOfToday)
+            );
+            vo.setTodayOutbound(todayOutbound == null ? 0L : todayOutbound);
+        } catch (Exception e) {
+            log.error("[Dashboard] outboundOrderMapper.selectCount 失败,todayOutbound 降级为 0: {}", e.getMessage());
+            vo.setTodayOutbound(0L);
+        }
 
         // 5. 库存预警(从 Redis 队列取前 10 条)
         try {
             List<String> alerts = stringRedisTemplate.opsForList().range("stock:alert:queue", 0, 9);
             vo.setAlerts(alerts == null ? Collections.emptyList() : alerts);
         } catch (Exception e) {
-            log.warn("Redis 不可用,预警列表置空: {}", e.getMessage());
+            log.warn("[Dashboard] Redis 不可用,预警列表置空: {}", e.getMessage());
             vo.setAlerts(Collections.emptyList());
         }
 
         // 6. 最近 5 条操作
-        List<OperationLog> recentLogs = operationLogMapper.selectList(
-                new LambdaQueryWrapper<OperationLog>()
-                        .orderByDesc(OperationLog::getCreateTime)
-                        .last("LIMIT 5")
-        );
-        List<RecentOperationVO> recentOps = recentLogs.stream().map(this::toRecentOp).collect(Collectors.toList());
-        vo.setRecentOps(recentOps);
+        try {
+            List<OperationLog> recentLogs = operationLogMapper.selectList(
+                    new LambdaQueryWrapper<OperationLog>()
+                            .orderByDesc(OperationLog::getCreateTime)
+                            .last("LIMIT 5")
+            );
+            List<RecentOperationVO> recentOps = recentLogs.stream().map(this::toRecentOp).collect(Collectors.toList());
+            vo.setRecentOps(recentOps);
+        } catch (Exception e) {
+            log.error("[Dashboard] operationLogMapper.selectList 失败,recentOps 降级为空: {}", e.getMessage());
+            vo.setRecentOps(Collections.emptyList());
+        }
 
-        // P3-2: 7 天出入库趋势
-        vo.setTrendDates(buildLast7Days());
-        vo.setInboundTrend(build7DayCounts(vo.getTrendDates(), true));
-        vo.setOutboundTrend(build7DayCounts(vo.getTrendDates(), false));
+        // P3-2: 7 天出入库趋势(同样降级)
+        try {
+            vo.setTrendDates(buildLast7Days());
+            vo.setInboundTrend(build7DayCounts(vo.getTrendDates(), true));
+            vo.setOutboundTrend(build7DayCounts(vo.getTrendDates(), false));
+        } catch (Exception e) {
+            log.error("[Dashboard] build7DayCounts 失败,趋势数据降级: {}", e.getMessage());
+            List<String> emptyDates = new ArrayList<>(7);
+            List<Long> emptyZeros = new ArrayList<>(7);
+            for (int i = 0; i < 7; i++) {
+                emptyDates.add("");
+                emptyZeros.add(0L);
+            }
+            vo.setTrendDates(emptyDates);
+            vo.setInboundTrend(emptyZeros);
+            vo.setOutboundTrend(new ArrayList<>(emptyZeros));
+        }
 
         return vo;
     }
