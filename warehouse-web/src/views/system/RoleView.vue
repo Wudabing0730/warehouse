@@ -33,7 +33,7 @@
         </div>
       </template>
       <el-table :data="tableData" border stripe v-loading="loading" style="width: 100%">
-        <el-table-column prop="id" label="ID" width="80" align="center" />
+        <el-table-column prop="roleId" label="ID" width="80" align="center" />
         <el-table-column prop="roleName" label="角色名称" width="150" />
         <el-table-column prop="roleDesc" label="角色描述" min-width="200" show-overflow-tooltip />
         <el-table-column label="权限数" width="100" align="center">
@@ -130,7 +130,7 @@ import { getRoleList, createRole, updateRole, deleteRole, getRolePermissions, as
 import { getPermissionTree } from '@/api/permission'
 
 interface Role {
-  id?: number
+  roleId?: number
   roleName: string
   roleDesc: string
   status: number
@@ -225,7 +225,7 @@ function handleAdd() {
 function handleEdit(row: Role) {
   dialogTitle.value = '编辑角色'
   isEdit.value = true
-  editingId.value = row.id ?? null
+  editingId.value = row.roleId ?? null
   form.roleName = row.roleName
   form.roleDesc = row.roleDesc ?? ''
   form.statusBool = row.status === 1
@@ -279,7 +279,7 @@ function handleDelete(row: Role) {
     type: 'warning',
   }).then(async () => {
     try {
-      await deleteRole(row.id!)
+      await deleteRole(row.roleId!)
       ElMessage.success('删除成功')
       fetchData()
     } catch {
@@ -296,11 +296,11 @@ const treeRef = ref<InstanceType<typeof ElTree>>()
 const assigningRoleId = ref<number | null>(null)
 
 async function handleAssignPermission(row: Role) {
-  assigningRoleId.value = row.id ?? null
+  assigningRoleId.value = row.roleId ?? null
   try {
     const [treeRes, checkedRes] = await Promise.all([
       getPermissionTree(),
-      getRolePermissions(row.id!),
+      getRolePermissions(row.roleId!),
     ])
     permissionTree.value = treeRes.data ?? treeRes ?? []
     const checkedIds: number[] = checkedRes.data ?? checkedRes ?? []

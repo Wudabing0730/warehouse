@@ -41,14 +41,33 @@ class VoJsonAliasTest {
     }
 
     @Test
-    @DisplayName("RoleVO 必须额外序列化 id 字段")
+    @DisplayName("RoleVO 必须同时序列化 id 和 roleId，且值相同")
     void roleVoHasIdAlias() throws Exception {
         RoleVO vo = new RoleVO();
         setField(vo, "roleId", 5L);
         JsonNode json = mapper.valueToTree(vo);
-        assertNotNull(json.get("id"));
-        assertTrue(json.get("id").asLong() == 5L);
-        assertNotNull(json.get("roleId"));
+        assertNotNull(json.get("id"), "RoleVO JSON 缺少 'id' 字段,前端 row.id 会是 undefined");
+        assertTrue(json.get("id").asLong() == 5L, "id 别名值应等于 roleId");
+        assertNotNull(json.get("roleId"), "RoleVO JSON 必须保留原始 roleId 字段");
+        assertTrue(json.get("roleId").asLong() == 5L, "roleId 值应正确");
+        assertTrue(json.get("id").asLong() == json.get("roleId").asLong(),
+                "id 和 roleId 必须相等,否则前端 roleId/roleId 显示不一致");
+    }
+
+    @Test
+    @DisplayName("RoleVO 新增角色后 roleId 不被 permissionIds 覆盖")
+    void roleVoRoleIdNotOverriddenByPermissionIds() throws Exception {
+        RoleVO vo = new RoleVO();
+        setField(vo, "roleId", 7L);
+        setField(vo, "roleName", "管理层");
+        setField(vo, "roleDesc", "查看报表和统计数据");
+        setField(vo, "status", 1);
+        setField(vo, "permissionIds", java.util.Arrays.asList(1L, 2L, 8L, 27L, 34L));
+        JsonNode json = mapper.valueToTree(vo);
+        assertTrue(json.get("roleId").asLong() == 7L,
+                "roleId 应为 7 而非 permissionIds 的长度或其他错误值");
+        assertTrue(json.get("id").asLong() == 7L,
+                "id 别名应为 7 而非 permissionIds 的长度或其他错误值");
     }
 
     @Test

@@ -9,6 +9,7 @@ import java.util.List;
 @Data
 public class CategoryVO {
 
+    @JsonProperty("categoryId")
     private Long categoryId;
 
     private String categoryName;

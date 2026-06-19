@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 @Data
 public class BorrowRecordVO {
 
+    @JsonProperty("recordId")
     private Long recordId;
 
     private String recordNo;

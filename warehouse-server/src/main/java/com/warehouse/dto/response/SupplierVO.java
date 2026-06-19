@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 @Data
 public class SupplierVO {
 
+    @JsonProperty("supplierId")
     private Long supplierId;
 
     private String supplierCode;

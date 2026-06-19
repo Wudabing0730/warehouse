@@ -9,6 +9,7 @@ import java.util.List;
 @Data
 public class InboundOrderVO {
 
+    @JsonProperty("orderId")
     private Long orderId;
 
     private String orderNo;

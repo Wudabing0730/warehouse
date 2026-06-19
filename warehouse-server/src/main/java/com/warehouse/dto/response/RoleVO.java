@@ -9,6 +9,7 @@ import java.util.List;
 @Data
 public class RoleVO {
 
+    @JsonProperty("roleId")
     private Long roleId;
     private String roleName;
     private String roleDesc;

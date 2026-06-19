@@ -113,9 +113,9 @@
           >
             <el-option
               v-for="role in roleList"
-              :key="role.id"
+              :key="role.roleId"
               :label="role.roleName"
-              :value="role.id"
+              :value="role.roleId"
             />
           </el-select>
         </el-form-item>
@@ -165,7 +165,7 @@ interface User {
 }
 
 interface Role {
-  id: number
+  roleId: number
   roleName: string
 }
 

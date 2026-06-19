@@ -9,6 +9,7 @@ import java.util.List;
 @Data
 public class UserVO {
 
+    @JsonProperty("userId")
     private Long userId;
     private String username;
     private String realName;

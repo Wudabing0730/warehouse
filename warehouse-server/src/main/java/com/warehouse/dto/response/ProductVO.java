@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 @Data
 public class ProductVO {
 
+    @JsonProperty("productId")
     private Long productId;
 
     private String productCode;

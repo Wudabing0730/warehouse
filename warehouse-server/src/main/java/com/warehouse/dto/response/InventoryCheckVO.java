@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @Data
 public class InventoryCheckVO {
 
+    @JsonProperty("checkId")
     private Long checkId;
 
     private String checkNo;
