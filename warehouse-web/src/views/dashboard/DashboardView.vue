@@ -1,5 +1,16 @@
 <template>
   <div class="dashboard">
+    <!-- UX: 数据库为空提示横幅,只在所有核心统计为 0 时显示 -->
+    <el-alert
+      v-if="isEmptyData"
+      type="warning"
+      show-icon
+      :closable="false"
+      title="数据库暂无业务数据"
+      description="当前未检测到任何产品/库存/出入库单据。请在 MySQL 中执行 sql/03-demo-data.sql 加载演示数据,或通过前端界面正常录入业务数据后再访问仪表盘。"
+      class="empty-hint"
+    />
+
     <!-- Stat Cards Row -->
     <el-row :gutter="20" class="stat-row">
       <el-col :span="6">
@@ -103,7 +114,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { reactive, ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { Box, Coin, Upload, Download, Plus, Search, List } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
@@ -119,6 +130,16 @@ const stats = reactive({
 
 const alerts = ref<string[]>([])
 const recentOps = ref<RecentOperation[]>([])
+
+// UX: 数据库完全为空(4 个核心统计全 0)时显示空数据提示,
+//     引导用户加载 sql/03-demo-data.sql,避免误以为代码 bug
+const isEmptyData = computed(
+  () =>
+    stats.productCount === 0 &&
+    stats.totalStock === 0 &&
+    stats.todayInbound === 0 &&
+    stats.todayOutbound === 0,
+)
 
 // P3-2: 7 天趋势数据 + ECharts 实例
 const trendDates = ref<string[]>([])
@@ -282,6 +303,10 @@ onBeforeUnmount(() => {
 .chart-container {
   width: 100%;
   height: 320px;
+}
+/* UX: 空数据提示横幅占满整行,与下方统计卡片留出间距 */
+.empty-hint {
+  margin-bottom: 16px;
 }
 </style>
 
