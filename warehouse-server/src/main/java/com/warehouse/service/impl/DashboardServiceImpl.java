@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -97,7 +98,46 @@ public class DashboardServiceImpl implements DashboardService {
         List<RecentOperationVO> recentOps = recentLogs.stream().map(this::toRecentOp).collect(Collectors.toList());
         vo.setRecentOps(recentOps);
 
+        // P3-2: 7 天出入库趋势
+        vo.setTrendDates(buildLast7Days());
+        vo.setInboundTrend(build7DayCounts(vo.getTrendDates(), true));
+        vo.setOutboundTrend(build7DayCounts(vo.getTrendDates(), false));
+
         return vo;
+    }
+
+    /** 构造最近 7 天的日期字符串(从 6 天前到今天) */
+    private List<String> buildLast7Days() {
+        DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        List<String> dates = new ArrayList<>(7);
+        for (int i = 6; i >= 0; i--) {
+            dates.add(LocalDate.now().minusDays(i).format(FMT));
+        }
+        return dates;
+    }
+
+    /** 对每个日期统计单据数(true=入库,false=出库) */
+    private List<Long> build7DayCounts(List<String> dates, boolean inbound) {
+        List<Long> counts = new ArrayList<>(7);
+        for (String dateStr : dates) {
+            LocalDate date = LocalDate.parse(dateStr);
+            LocalDateTime start = date.atStartOfDay();
+            LocalDateTime end = date.plusDays(1).atStartOfDay();
+            Long c;
+            if (inbound) {
+                c = inboundOrderMapper.selectCount(
+                        new LambdaQueryWrapper<InboundOrder>()
+                                .ge(InboundOrder::getCreateTime, start)
+                                .lt(InboundOrder::getCreateTime, end));
+            } else {
+                c = outboundOrderMapper.selectCount(
+                        new LambdaQueryWrapper<OutboundOrder>()
+                                .ge(OutboundOrder::getCreateTime, start)
+                                .lt(OutboundOrder::getCreateTime, end));
+            }
+            counts.add(c == null ? 0L : c);
+        }
+        return counts;
     }
 
     private RecentOperationVO toRecentOp(OperationLog log) {

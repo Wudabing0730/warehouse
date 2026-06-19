@@ -13,6 +13,10 @@ export interface DashboardSummary {
   todayOutbound: number
   alerts: string[]
   recentOps: RecentOperation[]
+  // P3-2: 最近 7 天出入库趋势
+  inboundTrend?: number[]
+  outboundTrend?: number[]
+  trendDates?: string[]
 }
 
 export function getDashboardSummary(): Promise<DashboardSummary> {

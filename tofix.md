@@ -345,7 +345,29 @@
   - **全栈 170 个测试全部通过** ✅
 - **状态**: ✅ 已完成
 
-### ⏳ P3-2 【仪表盘】无图表可视化
+### ✅ P3-2 【仪表盘】ECharts 可视化 — ✅ 已完成
+- **现状**:P0-8 修复后 DashboardView 已经接真实 API,但只有 4 个 stat card + alerts + recent ops,**没有图表**,数据展示不直观
+- **修复**:
+  - **后端**(`DashboardSummaryVO` + `DashboardServiceImpl`):
+    - 新增 `inboundTrend: List<Long>` / `outboundTrend: List<Long>` / `trendDates: List<String>` 3 个字段
+    - Service 端用 `LocalDate.now().minusDays(6)` 倒序构造 7 天窗口
+    - 对每天 00:00-24:00 区间做 count 查询,补齐数据
+  - **前端**(`api/dashboard.ts` + `DashboardView.vue`):
+    - 接口类型加 3 个可选字段
+    - 引入 `import * as echarts from 'echarts'`
+    - 在 stat 卡片下方加 `<div ref="chartRef" class="chart-container">` 图表容器(高度 320px)
+    - 写 `buildChartOption()` 构造含 tooltip/legend/grid/xAxis/yAxis/2 个 line series 的 ECharts 配置
+    - `onMounted` 时 `echarts.init` + `setOption`;`onBeforeUnmount` 时 `dispose`
+    - `window.resize` 事件自动重绘
+- **测试**(共 9 个 case):
+  - 后端 `DashboardTrendFieldsTest`(3 case):VO 序列化含 3 字段;数组长度=7;日期格式 yyyy-MM-dd
+  - 前端 `DashboardEChartsView.test.ts`(6 case):导入 echarts;有 chart ref / init;有 line type;有 option 配置;有 setOption;API 接口含 3 字段
+  - **反向证明**:后端 VO 删除 inboundTrend 字段 → 3 个 case 失败,定位到 `DashboardSummaryVO.java`;前端 DashboardView 删除 `echarts.init` → 1 个 case 失败
+- **全栈回归**:
+  - 后端:47 个 case(原 44 + 新增 3)全过 ✅
+  - 前端:132 个 case(原 126 + 新增 6)全过 ✅
+  - **共 179 个测试通过** ✅
+- **状态**: ✅ 已完成
 
 ---
 

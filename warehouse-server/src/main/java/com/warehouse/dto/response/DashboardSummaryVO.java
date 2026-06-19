@@ -31,6 +31,15 @@ public class DashboardSummaryVO {
     /** 最近 5 条操作记录(从 t_operation_log 按 create_time DESC 取) */
     private List<RecentOperationVO> recentOps;
 
+    /** P3-2: 最近 7 天每日入库单数(从 6 天前到今天,共 7 个数),供 ECharts 折线图 */
+    private List<Long> inboundTrend;
+
+    /** P3-2: 最近 7 天每日出库单数,供 ECharts 折线图 */
+    private List<Long> outboundTrend;
+
+    /** P3-2: 最近 7 天的日期字符串 yyyy-MM-dd,与上方两个数组一一对应 */
+    private List<String> trendDates;
+
     @Data
     public static class RecentOperationVO {
         private String time;
