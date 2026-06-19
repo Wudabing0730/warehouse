@@ -256,7 +256,24 @@
   - 恢复后 `Test Files 1 passed | Tests 29 passed` ✅
 - **状态**: ✅ 已修复
 
-### ⏳ P2-2 【入库/出库审计字段错配】
+### ✅ P2-2 【入库/出库审计字段错配】— ✅ 已修复
+- **现象**:入库/出库查询列表的"审核人"和"审核时间"列、以及详情对话框对应项,永远显示 `--`
+- **根因**:后端 VO 字段命名遵循"业务实体"语义(`confirmOperatorName` / `confirmTime`),前端列表用"业务角色"语义(`auditorName` / `auditTime`)
+- **影响范围**(8 处):
+  - `InboundQueryView.vue:47,51,90,91` — 表格 + 详情
+  - `OutboundQueryView.vue:47,51,90,91` — 表格 + 详情
+- **修复**:`InboundOrderVO` / `OutboundOrderVO` 加 `@JsonProperty` 别名 getter
+  - `@JsonProperty("auditorName") getAuditorName()` → 返回 `confirmOperatorName`
+  - `@JsonProperty("auditTime") getAuditTime()` → 返回 `confirmTime`
+  - 最小侵入:保留后端语义命名,Jackson 同时输出原字段 + 别名
+- **测试**: `warehouse-web/src/__tests__/views/InboundOutboundAuditFieldAlias.test.ts`(12 个 case)
+  - 断言 2 个 VO 各有 `auditorName` + `auditTime` 别名
+  - 断言前端 4 个 view(进/出 × 查/审)继续用 `row.auditorName/auditTime` / `currentRow.auditorName/auditTime`
+  - **反向证明**:临时把 `getAuditorName` 注释 → 2 个 case 失败,定位到 `InboundOrderVO` / `OutboundOrderVO`
+  - 恢复后 `Test Files 1 passed | Tests 12 passed` ✅
+  - 后端 `VoJsonAliasTest` 10/10 通过,无回归 ✅
+- **状态**: ✅ 已修复
+
 ### ⏳ P2-3 【JWT 过滤器】未放行 OPTIONS 预检
 ### ⏳ P2-4 【种子数据】`parent_id` 依赖 AUTO_INCREMENT 顺序
 
