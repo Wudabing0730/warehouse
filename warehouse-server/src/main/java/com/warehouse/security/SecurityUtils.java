@@ -28,4 +28,12 @@ public class SecurityUtils {
             return null;
         }
     }
+
+    public static String getCurrentUsernameSafely() {
+        try {
+            return getCurrentUsername();
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }
