@@ -108,9 +108,16 @@ class ProductServiceImplEndToEndTest {
         jdbc = new JdbcTemplate(dataSource);
     }
 
+    /**
+     * 历史背景:此测试早期断言了"删除后 DB 中 status 应为 0"(软禁用行为)。
+     * 但用户报告"删除按钮点击后只触发禁用事件而非真实删除"——根因是
+     * service.delete() 实际执行了 UPDATE status=0 而非 DELETE FROM。
+     * 修复后,删除按钮必须真实删除该行,故断言改为"行不存在"。
+     * 参照:UserServiceImpl.delete() / RoleServiceImpl.delete() / ProductCategoryServiceImpl.delete()。
+     */
     @Test
-    @DisplayName("端到端:ProductServiceImpl.delete(id) 必须把数据库里 product.status 改为 0")
-    void delete_mustPersistStatusChangeInDb() {
+    @DisplayName("端到端:ProductServiceImpl.delete(id) 必须真实删除该行")
+    void delete_mustRemoveRowFromDb() {
         // 1. 准备:插入 P001
         Product p = new Product();
         p.setProductCode("P001");
@@ -128,13 +135,13 @@ class ProductServiceImplEndToEndTest {
         System.out.println(">>> [delete 测试] productService.delete() 返回");
 
         // 3. 直接查 DB(JdbcTemplate 走独立连接,绕开 service 的任何缓存)
-        Integer statusInDb = jdbc.queryForObject(
-                "SELECT status FROM t_product WHERE product_id = ?",
-                Integer.class, productId);
-        System.out.println(">>> [delete 测试] DB 中 P001 的 status = " + statusInDb);
-        assertEquals(0, statusInDb,
-                "BUG 复现:ProductServiceImpl.delete() 调用后,DB 中 status 应为 0,"
-                        + " 但实际为 " + statusInDb);
+        Long countAfter = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM t_product WHERE product_id = ?",
+                Long.class, productId);
+        System.out.println(">>> [delete 测试] DB 中 P001 的行数 = " + countAfter);
+        assertEquals(0L, countAfter,
+                "修复后:ProductServiceImpl.delete() 调用后,DB 中该行应已被删除,"
+                        + " 但实际 count=" + countAfter + "(说明 delete() 还在走软禁用)");
     }
 
     @Test

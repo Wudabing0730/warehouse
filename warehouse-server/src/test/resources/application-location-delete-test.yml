@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:warehouse_location_delete_test;MODE=MySQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+  h2:
+    console:
+      enabled: false
+  sql:
+    init:
+      mode: never
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+  global-config:
+    db-config:
+      id-type: auto
+
+jwt:
+  access-secret: test-access-secret-key-must-be-long-enough-256bit-for-testing
+  refresh-secret: test-refresh-secret-key-must-be-long-enough-256bit-for-testing
+  access-expiration: 900000
+  refresh-expiration: 604800000
