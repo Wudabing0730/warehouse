@@ -43,6 +43,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private final PasswordEncoder passwordEncoder;
     private final StringRedisTemplate stringRedisTemplate;
 
+    /**
+     * P0 修复:支持前端传来的 orderBy/order 参数
+     * 原因:之前 wrapper.orderByDesc(User::getCreateTime) 写死,前端 el-table 无法切换 ID 列升降序
+     * 安全:orderBy 走白名单,只允许 userId/username/realName/createTime,防止 SQL 注入/任意字段泄漏
+     * 默认:userId ASC(自然顺序,符合"按 ID 升序"的用户预期)
+     */
+    private static final java.util.Set<String> ALLOWED_ORDER_BY = java.util.Set.of(
+            "userId", "username", "realName", "createTime"
+    );
+
     @Override
     public IPage<UserVO> page(Page<User> page, UserQueryDTO query) {
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
@@ -53,7 +63,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                    .like(StringUtils.hasText(query.getEmail()), User::getEmail, query.getEmail())
                    .eq(query.getStatus() != null, User::getStatus, query.getStatus());
         }
-        wrapper.orderByDesc(User::getCreateTime);
+
+        // 应用排序:白名单 + 方向,缺省 userId ASC
+        String orderBy = (query != null && StringUtils.hasText(query.getOrderBy()))
+                ? query.getOrderBy() : "userId";
+        String order = (query != null && "desc".equalsIgnoreCase(query.getOrder()))
+                ? "desc" : "asc";
+        if (!ALLOWED_ORDER_BY.contains(orderBy)) {
+            orderBy = "userId"; // 非法值兜底,避免 500
+        }
+        boolean isAsc = "asc".equals(order);
+        switch (orderBy) {
+            case "userId"     -> wrapper.orderBy(true, isAsc, User::getUserId);
+            case "username"   -> wrapper.orderBy(true, isAsc, User::getUsername);
+            case "realName"   -> wrapper.orderBy(true, isAsc, User::getRealName);
+            case "createTime" -> wrapper.orderBy(true, isAsc, User::getCreateTime);
+            default           -> wrapper.orderByAsc(User::getUserId);
+        }
 
         IPage<User> userPage = userMapper.selectPage(page, wrapper);
 

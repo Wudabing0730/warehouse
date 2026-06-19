@@ -40,10 +40,11 @@
           <el-button type="primary" @click="handleAdd">新增用户</el-button>
         </div>
       </template>
-      <el-table :data="tableData" border stripe v-loading="loading" style="width: 100%">
-        <el-table-column prop="id" label="ID" width="80" align="center" />
-        <el-table-column prop="username" label="用户名" width="120" />
-        <el-table-column prop="realName" label="真实姓名" width="120" />
+      <el-table :data="tableData" border stripe v-loading="loading" style="width: 100%"
+        @sort-change="handleSortChange">
+        <el-table-column prop="id" label="ID" width="80" align="center" sortable="custom" />
+        <el-table-column prop="username" label="用户名" width="120" sortable="custom" />
+        <el-table-column prop="realName" label="真实姓名" width="120" sortable="custom" />
         <el-table-column prop="phone" label="手机号" width="140" />
         <el-table-column prop="email" label="邮箱" min-width="180" />
         <el-table-column label="状态" width="100" align="center">
@@ -53,7 +54,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="创建时间" width="180" />
+        <el-table-column prop="createTime" label="创建时间" width="180" sortable="custom" />
         <el-table-column label="操作" width="260" align="center" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
@@ -194,6 +195,14 @@ const pagination = reactive({
   total: 0,
 })
 
+// 排序状态:P0 修复 — 支持点击列头切换升降序
+// sortProp 映射到后端 orderBy 字段(白名单)
+// null = 不传 orderBy,后端用默认 userId ASC
+const sortState = reactive({
+  orderBy: '' as string,
+  order: '' as 'asc' | 'desc' | '',
+})
+
 async function fetchData() {
   loading.value = true
   try {
@@ -204,6 +213,8 @@ async function fetchData() {
     if (searchForm.username) params.username = searchForm.username
     if (searchForm.realName) params.realName = searchForm.realName
     if (searchForm.status !== null) params.status = searchForm.status
+    if (sortState.orderBy) params.orderBy = sortState.orderBy
+    if (sortState.order) params.order = sortState.order
 
     const res = await getUserList(params)
     const data = res.data || res
@@ -216,6 +227,27 @@ async function fetchData() {
   }
 }
 
+// 列头点击 → 更新 sortState → 重新查询
+function handleSortChange({ prop, order }: { prop: string | null; order: 'ascending' | 'descending' | null }) {
+  // Element Plus 列 prop('id') → 后端字段名('userId')的映射
+  const propToField: Record<string, string> = {
+    id: 'userId',
+    username: 'username',
+    realName: 'realName',
+    createTime: 'createTime',
+  }
+  if (!prop || !order) {
+    // 第三次点击:清除排序,后端用默认 userId ASC
+    sortState.orderBy = ''
+    sortState.order = ''
+  } else {
+    sortState.orderBy = propToField[prop] || prop
+    sortState.order = order === 'ascending' ? 'asc' : 'desc'
+  }
+  pagination.page = 1
+  fetchData()
+}
+
 function handleSearch() {
   pagination.page = 1
   fetchData()
@@ -225,6 +257,8 @@ function handleReset() {
   searchForm.username = ''
   searchForm.realName = ''
   searchForm.status = null
+  sortState.orderBy = ''
+  sortState.order = ''
   handleSearch()
 }
 
