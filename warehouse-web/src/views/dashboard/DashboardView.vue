@@ -105,6 +105,7 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { Box, Coin, Upload, Download, Plus, Search, List } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
 import { getDashboardSummary, type RecentOperation } from '@/api/dashboard'
 
@@ -195,8 +196,10 @@ async function fetchDashboardData() {
     outboundTrend.value = summary.outboundTrend ?? []
     await nextTick()
     renderChart()
-  } catch {
-    // 错误由全局 axios 拦截器统一处理,这里保持零值
+  } catch (e) {
+    // Bug fix:不能静默吞错 — 必须给用户反馈 + 留 console 排查线索
+    console.error('[Dashboard] load failed:', e)
+    ElMessage.error('加载仪表盘数据失败,请稍后重试')
   }
 }
 
