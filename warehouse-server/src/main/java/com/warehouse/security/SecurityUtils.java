@@ -10,7 +10,11 @@ public class SecurityUtils {
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new IllegalStateException("User is not authenticated");
         }
-        return Long.valueOf(authentication.getPrincipal().toString());
+        // 修复:JwtAuthenticationFilter 把 UserDetails 对象塞进 principal,
+        // 用 principal.toString() 会得到 "org.springframework.security.core.userdetails.User [Username=1, ...]"
+        // 这种字符串,Long.valueOf() 会抛 NumberFormatException。
+        // 应改用 authentication.getName() —— 在 username="1" 的情况下直接返回 "1"。
+        return Long.valueOf(authentication.getName());
     }
 
     public static String getCurrentUsername() {
