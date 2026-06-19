@@ -14,7 +14,7 @@
             <el-option
               v-for="p in productOptions"
               :key="p.id"
-              :label="p.name + ' (' + p.code + ')'"
+              :label="p.productName + ' (' + p.productCode + ')'"
               :value="p.id"
             />
           </el-select>
@@ -101,7 +101,7 @@
             <el-option
               v-for="p in productOptions"
               :key="p.id"
-              :label="p.name + ' (' + p.code + ')'"
+              :label="p.productName + ' (' + p.productCode + ')'"
               :value="p.id"
             />
           </el-select>

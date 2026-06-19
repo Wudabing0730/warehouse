@@ -237,7 +237,25 @@
 
 ## P2 — 中等(建议修复)
 
-### ⏳ P2-1 【下拉框 label 全部空白】
+### ✅ P2-1 【下拉框 label 全部空白】— ✅ 已修复
+- **现象**:入库/出库/借还/盘点/库存报表模块的下拉框渲染后,选中项文本为空白(只显示 ID)
+- **根因**:前端 `el-option :label` 大量使用 `s.name / c.name / p.name / loc.name / p.code`,但后端 VO 实际字段是 `supplierName / customerName / productName / locationName / productCode`
+- **影响范围**(16 处):
+  - `InboundFormView.vue`(3 处:supplier/product/location)、`InboundQueryView.vue`、`InboundAuditView.vue`
+  - `OutboundFormView.vue`(2 处:customer/product)、`OutboundQueryView.vue`、`OutboundAuditView.vue`
+  - `BorrowFormView.vue`、`BorrowQueryView.vue`、`ReturnFormView.vue`
+  - `CheckTaskView.vue`、`CheckInputView.vue`、`CheckResultView.vue`、`StockReportView.vue`
+- **修复**:所有 el-option 的 `:label` 引用统一改为后端 VO 真实字段名
+  - `s.name → s.supplierName`、`c.name → c.customerName`
+  - `p.name → p.productName`、`p.code → p.productCode`
+  - `loc.name → loc.locationName`
+- **测试**: `warehouse-web/src/__tests__/views/DropdownOptionLabelConsistency.test.ts`(29 个 case)
+  - 断言所有 16 个视图的下拉框 label 都用了正确字段名
+  - **反向断言**:13 个视图不允许再出现 `:label="s.name"` 等 6 种错误模式(用 `it.each` 覆盖)
+  - **反向证明**:临时把 `InboundFormView` 的 `s.supplierName` 改回 `s.name` → 该 case 失败,定位到行 28-33
+  - 恢复后 `Test Files 1 passed | Tests 29 passed` ✅
+- **状态**: ✅ 已修复
+
 ### ⏳ P2-2 【入库/出库审计字段错配】
 ### ⏳ P2-3 【JWT 过滤器】未放行 OPTIONS 预检
 ### ⏳ P2-4 【种子数据】`parent_id` 依赖 AUTO_INCREMENT 顺序

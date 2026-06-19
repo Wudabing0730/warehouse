@@ -7,7 +7,7 @@
         </el-form-item>
         <el-form-item label="产品">
           <el-select v-model="searchForm.productId" placeholder="选择产品" filterable clearable>
-            <el-option v-for="p in productList" :key="p.id" :label="p.name" :value="p.id" />
+            <el-option v-for="p in productList" :key="p.id" :label="p.productName" :value="p.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="借用人">

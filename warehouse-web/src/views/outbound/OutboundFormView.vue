@@ -28,7 +28,7 @@
                 <el-option
                   v-for="c in customerList"
                   :key="c.id"
-                  :label="c.name"
+                  :label="c.customerName"
                   :value="c.id"
                 />
               </el-select>
@@ -90,7 +90,7 @@
               <el-option
                 v-for="p in productList"
                 :key="p.id"
-                :label="p.name"
+                :label="p.productName"
                 :value="p.id"
               />
             </el-select>

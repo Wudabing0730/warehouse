@@ -7,7 +7,7 @@
         </el-form-item>
         <el-form-item label="供应商">
           <el-select v-model="searchForm.supplierId" placeholder="选择供应商" filterable clearable>
-            <el-option v-for="s in supplierList" :key="s.id" :label="s.name" :value="s.id" />
+            <el-option v-for="s in supplierList" :key="s.id" :label="s.supplierName" :value="s.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="状态">

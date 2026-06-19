@@ -28,7 +28,7 @@
                 <el-option
                   v-for="s in supplierList"
                   :key="s.id"
-                  :label="s.name"
+                  :label="s.supplierName"
                   :value="s.id"
                 />
               </el-select>
@@ -78,7 +78,7 @@
               <el-option
                 v-for="p in productList"
                 :key="p.id"
-                :label="p.name"
+                :label="p.productName"
                 :value="p.id"
               />
             </el-select>
@@ -126,7 +126,7 @@
               <el-option
                 v-for="loc in locationList"
                 :key="loc.id"
-                :label="loc.name"
+                :label="loc.locationName"
                 :value="loc.id"
               />
             </el-select>
