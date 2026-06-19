@@ -29,9 +29,13 @@ mybatis-plus:
   global-config:
     db-config:
       id-type: auto
-      logic-delete-field: deleted
-      logic-delete-value: 1
-      logic-not-delete-value: 0
+      # P0 修复:移除 logic-delete-field/logic-delete-value/logic-not-delete-value
+      # 原因:没有任何 entity 声明 deleted 字段或 @TableLogic 注解(项目未启用逻辑删除),
+      #      全局配置 logic-delete-field 会让 MyBatis-Plus 在所有 UPDATE/SELECT 自动追加
+      #      `WHERE deleted = '0'`,但 t_product 等业务表都没有 deleted 列,
+      #      SQL 报 `Unknown column 'deleted' in 'where clause'`,导致所有写入操作失败
+      #      但前端仍显示"操作成功"(异常被 GlobalExceptionHandler 兜底为 500 + 通用错误)。
+      # 修复时间:2026-06-19  验证:MybatisPlusLogicalDeleteConfigConsistencyTest
 
 jwt:
   access-secret: warehouse-jwt-access-secret-key-must-be-long-enough-256bit
