@@ -298,7 +298,23 @@
 - **状态**: ✅ 已修复
 - **关联修复**: 同步给 `sql/02-seed.sql` 补了 `system:user:resetPassword` 权限(P1-5 端点对应的种子数据遗漏),`PermissionAnnotationConsistencyTest.SEED_PERMISSION_CODES` 同步补全
 
-### ⏳ P2-4 【种子数据】`parent_id` 依赖 AUTO_INCREMENT 顺序
+### ✅ P2-4 【种子数据】`parent_id` 依赖 AUTO_INCREMENT 顺序 — ✅ 已修复
+- **现象**:在 `t_permission` 中间插入任何新行后,后续所有 `parent_id=N` 引用都会指向错误的行,树状菜单错乱
+- **根因**:`sql/02-seed.sql` 中所有非顶级权限的 `parent_id` 都是字面数字(1, 3, 4, 9, 15 ...),这些数字在固定插入顺序下才正确,顺序一变就全错
+- **关联事件**:P2-3 加 `system:user:resetPassword` 这一行时,所有后续行都需要重新编号才能继续工作 — 极易出错
+- **修复**:`02-seed.sql` 重构为三步插入,所有非顶级 `parent_id` 改用 `(SELECT permission_id FROM t_permission WHERE permission_code = '...')` 解析
+  - **第 1 步**:插入所有顶级菜单(`dashboard / system / base / inbound / outbound / borrow / inventory / report`,parent_id=NULL)
+  - **第 2 步**:插入所有二级菜单,parent_id 通过 `permission_code` 解析
+  - **第 3 步**:插入所有按钮权限(三级),同理
+  - **优势**:后续在任意位置插入新行都不影响父子引用,改顺序也安全
+- **测试**: `warehouse-server/src/test/java/com/warehouse/sql/SeedPermissionParentIdIndependenceTest.java`(3 个 case)
+  - 解析 `INSERT INTO t_permission` 块,断言所有 `parent_id` 都不是字面数字(只允许 NULL)
+  - 断言文件中至少 50 处用 `SELECT permission_id FROM t_permission WHERE permission_code = ...` 模式解析
+  - 断言所有原 permission_code 都仍然存在(无丢失)
+  - **反向证明**:临时把第 2 步中一行 `parent_id` 改回字面数字 → 第一个 case 失败,定位到该行
+  - 恢复后 `Tests run: 3, Failures: 0` ✅
+- **回归**: 全栈 25 后端 + 126 前端测试全过 ✅
+- **状态**: ✅ 已修复
 
 ## P3 — 低优(后续优化)
 
