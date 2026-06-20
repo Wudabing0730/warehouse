@@ -341,8 +341,10 @@ async function handleSubmit() {
     await createInbound(payload)
     ElMessage.success('入库单创建成功')
     handleReset()
-  } catch {
-    // handled by interceptor
+  } catch (e: any) {
+    // 修复:把后端 message 透出给用户(以前 catch {} 吞掉所有错误)
+    const msg = e?.response?.data?.message ?? e?.message ?? '提交失败'
+    ElMessage.error(msg)
   } finally {
     submitting.value = false
   }

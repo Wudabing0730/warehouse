@@ -126,6 +126,24 @@
             />
           </template>
         </el-table-column>
+        <el-table-column label="目标库位" min-width="160">
+          <template #default="{ row }">
+            <el-select
+              v-model="row.locationId"
+              placeholder="选择库位"
+              filterable
+              clearable
+              style="width: 100%"
+            >
+              <el-option
+                v-for="loc in locationList"
+                :key="loc.id"
+                :label="loc.locationName"
+                :value="loc.id"
+              />
+            </el-select>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="80" fixed="right">
           <template #default="{ $index }">
             <el-button
@@ -186,12 +204,15 @@ import { DocumentAdd, List, EditPen, Plus, Check, Delete } from '@element-plus/i
 import { createOutbound } from '@/api/outbound'
 import { getProductList } from '@/api/product'
 import { getCustomerList } from '@/api/customer'
+import { getLocationList } from '@/api/location'
 
 interface DetailRow {
   productId: number | null
   currentStock: number | null
   quantity: number
   unitPrice: number
+  // 修复:补 locationId,与入库页对齐,confirm 阶段按指定库位扣库存
+  locationId: number | null
 }
 
 interface OutboundForm {
@@ -209,6 +230,7 @@ function createEmptyDetail(): DetailRow {
     currentStock: null,
     quantity: 0,
     unitPrice: 0,
+    locationId: null,
   }
 }
 
@@ -218,6 +240,7 @@ const productLoading = ref(false)
 
 const customerList = ref<any[]>([])
 const productList = ref<any[]>([])
+const locationList = ref<any[]>([])
 
 const formData = reactive<OutboundForm>({
   customerId: null,
@@ -241,7 +264,7 @@ const getDefaultTime = (): string => {
 
 onMounted(async () => {
   formData.orderTime = getDefaultTime()
-  await Promise.all([loadCustomers(), loadProducts()])
+  await Promise.all([loadCustomers(), loadProducts(), loadLocations()])
 })
 
 async function loadCustomers() {
@@ -260,6 +283,15 @@ async function loadProducts() {
     productList.value = res.data?.records ?? res.data ?? []
   } finally {
     productLoading.value = false
+  }
+}
+
+async function loadLocations() {
+  try {
+    const res = await getLocationList({ size: 999 })
+    locationList.value = res.data?.records ?? res.data ?? []
+  } catch {
+    // handled by interceptor
   }
 }
 
@@ -300,6 +332,11 @@ function validateDetails(): boolean {
       ElMessage.warning(`第 ${i + 1} 行：出库数量必须大于0`)
       return false
     }
+    // 修复:库位必填,与入库页一致;避免 confirm 阶段用 default 兜底导致扣错库位
+    if (!d.locationId) {
+      ElMessage.warning(`第 ${i + 1} 行：请选择目标库位`)
+      return false
+    }
   }
   return true
 }
@@ -322,13 +359,16 @@ async function handleSubmit() {
         productId: d.productId,
         quantity: d.quantity,
         unitPrice: d.unitPrice,
+        locationId: d.locationId,
       })),
     }
     await createOutbound(payload)
     ElMessage.success('出库单创建成功')
     handleReset()
-  } catch {
-    // handled by interceptor
+  } catch (e: any) {
+    // 修复:把后端 message 透出给用户(以前 catch {} 吞掉所有错误)
+    const msg = e?.response?.data?.message ?? e?.message ?? '提交失败'
+    ElMessage.error(msg)
   } finally {
     submitting.value = false
   }

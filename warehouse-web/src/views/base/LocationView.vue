@@ -203,8 +203,10 @@ const handleSubmit = async () => {
     }
     dialogVisible.value = false
     fetchList()
-  } catch {
-    // handled by interceptor
+  } catch (e: any) {
+    // 修复:把后端 message 透出给用户(以前 catch {} 吞掉所有错误)
+    const msg = e?.response?.data?.message ?? e?.message ?? '操作失败'
+    ElMessage.error(msg)
   } finally {
     submitLoading.value = false
   }
