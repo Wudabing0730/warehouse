@@ -29,6 +29,8 @@ import com.warehouse.mapper.WarehouseLocationMapper;
 import com.warehouse.security.SecurityUtils;
 import com.warehouse.service.OutboundService;
 import com.warehouse.util.OrderNoGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -43,6 +45,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class OutboundServiceImpl extends ServiceImpl<OutboundOrderMapper, OutboundOrder> implements OutboundService {
+
+    private static final Logger log = LoggerFactory.getLogger(OutboundServiceImpl.class);
 
     @Autowired
     private OutboundOrderDetailMapper outboundOrderDetailMapper;
@@ -129,10 +133,14 @@ public class OutboundServiceImpl extends ServiceImpl<OutboundOrderMapper, Outbou
             if (detail.getQuantity() == null || detail.getQuantity().compareTo(BigDecimal.ZERO) <= 0) {
                 throw new BusinessException(400, "出库数量必须大于0");
             }
+            // 修复:出库必须指定库位(同一种商品多库位时),前端已校验,后端兜底
+            if (detail.getLocationId() == null) {
+                throw new BusinessException(400, "库位不能为空");
+            }
         }
 
-        // 3. Generate order number
-        String orderNo = OrderNoGenerator.generate("CK", stringRedisTemplate);
+        // 3. Generate order number with retry(避免 Redis 撞 uk_order_no)
+        String orderNo = generateUniqueOrderNo("CK");
 
         // 4. Get current operator
         Long operatorId = SecurityUtils.getCurrentUserId();
@@ -160,8 +168,32 @@ public class OutboundServiceImpl extends ServiceImpl<OutboundOrderMapper, Outbou
             outboundOrderDetailMapper.insert(detail);
         }
 
-        // 7. Return VO
-        return convertToVO(order);
+        // 7. Return VO with details loaded(修复:之前只 convertToVO(order) 导致 details 为空)
+        OutboundOrderVO vo = convertToVO(order);
+        List<OutboundOrderDetail> savedDetails = outboundOrderDetailMapper.selectByOrderId(order.getOrderId());
+        if (!CollectionUtils.isEmpty(savedDetails)) {
+            vo.setDetails(savedDetails.stream().map(this::convertDetailToVO).collect(Collectors.toList()));
+        } else {
+            vo.setDetails(Collections.emptyList());
+        }
+        return vo;
+    }
+
+    /**
+     * 修复:生成不重复的单号。Redis 主路径即使 % 1000000 在极高并发下仍可能撞号,
+     * 因此加一次 DB 唯一性预检 + 重试(最多 3 次)。
+     */
+    private String generateUniqueOrderNo(String prefix) {
+        for (int attempt = 1; attempt <= 3; attempt++) {
+            String candidate = OrderNoGenerator.generate(prefix, stringRedisTemplate);
+            Long existing = baseMapper.selectCount(
+                    new LambdaQueryWrapper<OutboundOrder>().eq(OutboundOrder::getOrderNo, candidate));
+            if (existing == null || existing == 0L) {
+                return candidate;
+            }
+            log.warn("订单号 {} 已存在,重试 attempt={}", candidate, attempt);
+        }
+        throw new BusinessException(500, "订单号生成失败，请重试");
     }
 
     @Override

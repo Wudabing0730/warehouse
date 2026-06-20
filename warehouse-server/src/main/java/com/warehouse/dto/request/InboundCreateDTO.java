@@ -9,6 +9,8 @@ import java.util.List;
 
 @Data
 public class InboundCreateDTO {
+    // 修复:补 @NotNull,与前端 formRules.supplierId 对齐
+    @NotNull(message = "供应商不能为空")
     private Long supplierId;
 
     @NotNull

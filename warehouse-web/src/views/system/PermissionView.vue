@@ -11,20 +11,17 @@
         </div>
       </template>
       <el-table
-        :data="flatList"
+        ref="tableRef"
+        :data="treeData"
         border
         stripe
         v-loading="loading"
-        row-key="id"
+        row-key="permissionId"
+        :tree-props="{ children: 'children' }"
         style="width: 100%"
-        default-expand-all
       >
-        <el-table-column prop="name" label="名称" width="240">
-          <template #default="{ row }">
-            <span :style="{ paddingLeft: (row._level ?? 0) * 24 + 'px' }">{{ row.name }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="code" label="权限编码" width="220" />
+        <el-table-column prop="permissionName" label="名称" min-width="200" />
+        <el-table-column prop="permissionCode" label="权限编码" width="220" />
         <el-table-column label="资源类型" width="120" align="center">
           <template #default="{ row }">
             <el-tag v-if="row.resourceType" size="small" type="info">
@@ -44,30 +41,6 @@
         <el-table-column prop="sort" label="排序" width="80" align="center" />
       </el-table>
     </el-card>
-
-    <!-- Also show as tree for visual hierarchy -->
-    <el-card class="tree-card" shadow="never" style="margin-top: 16px">
-      <template #header>
-        <span>权限树</span>
-      </template>
-      <el-tree
-        :data="treeData"
-        :props="{ label: 'name', children: 'children' }"
-        default-expand-all
-        node-key="id"
-        highlight-current
-      >
-        <template #default="{ data }">
-          <div class="tree-node">
-            <span class="tree-node-name">{{ data.name }}</span>
-            <el-tag size="small" type="primary" class="tree-node-code">{{ data.code }}</el-tag>
-            <el-tag v-if="data.resourceType" size="small" type="info" class="tree-node-badge">
-              {{ data.resourceType }}
-            </el-tag>
-          </div>
-        </template>
-      </el-tree>
-    </el-card>
   </div>
 </template>
 
@@ -76,9 +49,9 @@ import { ref, onMounted } from 'vue'
 import { getPermissionTree } from '@/api/permission'
 
 interface PermissionNode {
-  id: number
-  name: string
-  code: string
+  permissionId: number
+  permissionCode?: string
+  permissionName: string
   resourceType?: string
   path?: string
   type?: number
@@ -86,32 +59,31 @@ interface PermissionNode {
   children?: PermissionNode[]
 }
 
-interface FlatPermission extends PermissionNode {
-  _level?: number
-}
-
+// 必须与后端 PermissionVO 字段一致;permissionId 是 tree-table 的 rowKey,
+// children 是子节点字段。若错配为 id/name 会导致 el-table 把所有行视为同一行,
+// 点击任何一行的展开箭头都会把所有行一起展开。
 const treeData = ref<PermissionNode[]>([])
-const flatList = ref<FlatPermission[]>([])
+const tableRef = ref()
 const loading = ref(false)
 
-function flattenTree(nodes: PermissionNode[], level = 0): FlatPermission[] {
-  const result: FlatPermission[] = []
+function collectKeys(nodes: PermissionNode[], out: number[] = []): number[] {
   for (const node of nodes) {
-    result.push({ ...node, _level: level })
-    if (node.children && node.children.length > 0) {
-      result.push(...flattenTree(node.children, level + 1))
+    if (node.permissionId !== undefined && node.permissionId !== null) {
+      out.push(node.permissionId)
+    }
+    if (node.children?.length) {
+      collectKeys(node.children, out)
     }
   }
-  return result
+  return out
 }
 
 async function fetchData() {
   loading.value = true
   try {
     const res = await getPermissionTree()
-    const data = res.data ?? res
-    treeData.value = data ?? []
-    flatList.value = flattenTree(treeData.value)
+    const data = (res as { data?: PermissionNode[] }).data ?? (res as PermissionNode[])
+    treeData.value = Array.isArray(data) ? data : []
   } catch {
     // handled by interceptor
   } finally {
@@ -120,21 +92,13 @@ async function fetchData() {
 }
 
 function expandAll() {
-  const treeEl = document.querySelector('.tree-card:last-child .el-tree') as HTMLElement
-  if (treeEl) {
-    const nodes = treeEl.querySelectorAll('.el-tree-node')
-    nodes.forEach((n) => n.classList.remove('is-collapsed'))
-    n.classList.add('is-expanded')
-  }
+  const keys = collectKeys(treeData.value)
+  keys.forEach((k) => tableRef.value?.toggleRowExpansion(k, true))
 }
 
 function collapseAll() {
-  const treeEl = document.querySelector('.tree-card:last-child .el-tree') as HTMLElement
-  if (treeEl) {
-    const nodes = treeEl.querySelectorAll('.el-tree-node.is-expanded')
-    nodes.forEach((n) => n.classList.remove('is-expanded'))
-    n.classList.add('is-collapsed')
-  }
+  const keys = collectKeys(treeData.value)
+  keys.forEach((k) => tableRef.value?.toggleRowExpansion(k, false))
 }
 
 onMounted(() => {
@@ -157,20 +121,5 @@ onMounted(() => {
 .header-actions {
   display: flex;
   gap: 8px;
-}
-.tree-node {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.tree-node-name {
-  font-weight: 500;
-}
-.tree-node-code {
-  font-family: monospace;
-}
-.tree-node-badge {
-  font-size: 11px;
 }
 </style>

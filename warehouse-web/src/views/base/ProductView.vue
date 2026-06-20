@@ -144,9 +144,9 @@
               <el-select v-model="form.defaultLocationId" placeholder="选择库位" clearable style="width: 100%">
                 <el-option
                   v-for="loc in locationList"
-                  :key="loc.id"
+                  :key="loc.locationId"
                   :label="loc.locationName"
-                  :value="loc.id"
+                  :value="loc.locationId"
                 />
               </el-select>
             </el-form-item>

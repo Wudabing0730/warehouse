@@ -51,13 +51,16 @@
       <template #header>
         <span>操作日志</span>
       </template>
+      <!-- row-key 必须与后端 OperationLogVO.logId 对齐;OperationLogVO 没有
+           @JsonProperty("id") 别名,所以不能用 "id" 当 rowKey,否则所有行
+           rowKey=undefined,点击任意一行的展开箭头会让所有行一起展开。 -->
       <el-table
         :data="tableData"
         border
         stripe
         v-loading="loading"
         style="width: 100%"
-        row-key="id"
+        row-key="logId"
         @expand-change="handleExpandChange"
       >
         <el-table-column type="expand">
@@ -77,7 +80,7 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="id" label="ID" width="80" align="center" />
+        <el-table-column prop="logId" label="ID" width="80" align="center" />
         <el-table-column prop="username" label="用户" width="120" />
         <el-table-column prop="description" label="操作描述" min-width="180" show-overflow-tooltip />
         <el-table-column label="模块" width="120" align="center">
@@ -129,7 +132,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { getLogList } from '@/api/log'
 
 interface LogEntry {
-  id: number
+  logId: number
   userId?: number
   username: string
   description: string

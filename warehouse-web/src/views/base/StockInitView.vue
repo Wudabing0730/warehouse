@@ -10,9 +10,9 @@
           <el-select v-model="searchForm.locationId" placeholder="选择库位" clearable style="width: 200px">
             <el-option
               v-for="loc in locationList"
-              :key="loc.id"
+              :key="loc.locationId"
               :label="loc.locationName"
-              :value="loc.id"
+              :value="loc.locationId"
             />
           </el-select>
         </el-form-item>
@@ -32,8 +32,10 @@
         </div>
       </template>
 
+      <!-- prop="stockId" 必须与后端 StockVO.stockId 对齐;StockVO 没有
+           @JsonProperty("id") 别名,绑定 "id" 会让 ID 列显示空白。 -->
       <el-table :data="tableData" v-loading="loading" border stripe style="width: 100%">
-        <el-table-column prop="id" label="ID" width="70" />
+        <el-table-column prop="stockId" label="ID" width="70" />
         <el-table-column prop="productCode" label="产品编码" width="130" />
         <el-table-column prop="productName" label="产品名称" width="150" />
         <el-table-column prop="productUnit" label="产品单位" width="90" />
@@ -83,12 +85,14 @@
           </el-select>
         </el-form-item>
         <el-form-item label="库位" prop="locationId">
+          <!-- LocationVO 字段是 locationId,没有 getId() 别名,必须用 loc.locationId;
+               否则 v-model 写入 undefined,初始化提交会校验失败。 -->
           <el-select v-model="initForm.locationId" placeholder="选择库位" style="width: 100%">
             <el-option
               v-for="loc in locationList"
-              :key="loc.id"
+              :key="loc.locationId"
               :label="`${loc.locationCode} - ${loc.locationName}`"
-              :value="loc.id"
+              :value="loc.locationId"
             />
           </el-select>
         </el-form-item>

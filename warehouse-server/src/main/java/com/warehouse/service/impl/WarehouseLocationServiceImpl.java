@@ -20,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.annotation.Resource;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class WarehouseLocationServiceImpl extends ServiceImpl<WarehouseLocationMapper, WarehouseLocation>
@@ -47,20 +46,11 @@ public class WarehouseLocationServiceImpl extends ServiceImpl<WarehouseLocationM
             }
         }
         wrapper.orderByDesc("create_time");
-        // MyBatis-Plus 3.5.9 分页拦截器在 mybatis-plus-jsqlparser 模块中未引入，
-        // 需手动设置 LIMIT 并查询总数
-        Long total = baseMapper.selectCount(wrapper);
-        page.setTotal(total);
-        int current = (int) page.getCurrent();
-        int size = (int) page.getSize();
-        wrapper.last("LIMIT " + (current - 1) * size + "," + size);
+        // 修复:依赖 MybatisPlusConfig.mybatisPlusInterceptor() 注册的 PaginationInnerInterceptor
+        // 由拦截器自动执行 COUNT(*) + LIMIT,删除此前手动 selectCount + wrapper.last("LIMIT ...")
+        // (后者会与全局拦截器重复拼接 LIMIT,触发 BadSqlGrammarException)
         IPage<WarehouseLocation> locationPage = baseMapper.selectPage(page, wrapper);
-        List<LocationVO> voList = locationPage.getRecords().stream()
-                .map(this::convertToVO)
-                .collect(Collectors.toList());
-        IPage<LocationVO> voPage = new Page<>(locationPage.getCurrent(), locationPage.getSize(), total);
-        voPage.setRecords(voList);
-        return voPage;
+        return locationPage.convert(this::convertToVO);
     }
 
     @Override
@@ -82,7 +72,10 @@ public class WarehouseLocationServiceImpl extends ServiceImpl<WarehouseLocationM
         }
         WarehouseLocation location = new WarehouseLocation();
         BeanUtils.copyProperties(dto, location);
-        location.setStatus(1);
+        // 修复:DTO 现在含 status;null 时兜底为 1(启用),保持与 DB 默认值一致
+        if (location.getStatus() == null) {
+            location.setStatus(1);
+        }
         baseMapper.insert(location);
         return convertToVO(location);
     }
