@@ -137,9 +137,9 @@
             >
               <el-option
                 v-for="loc in locationList"
-                :key="loc.id"
+                :key="loc.locationId"
                 :label="loc.locationName"
-                :value="loc.id"
+                :value="loc.locationId"
               />
             </el-select>
           </template>
