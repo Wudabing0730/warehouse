@@ -24,13 +24,17 @@ public class OrderNoGenerator {
                 Long seq = stringRedisTemplate.opsForValue().increment(key);
                 // Set expiry so keys don't accumulate forever (keep for 2 days)
                 stringRedisTemplate.expire(key, java.time.Duration.ofDays(2));
-                return String.format("%04d", seq % 10000);
+                // P3-1 修复:6 位模数,避免单日超过 10000 单时回绕重复触发 uk_order_no
+                return String.format("%06d", seq % 1_000_000L);
             } catch (Exception e) {
                 // Redis unavailable, fallback to random
             }
         }
 
-        // Fallback: random 4-digit number
-        return String.format("%04d", RANDOM.nextInt(10000));
+        // P3-1 修复:fallback 用 ThreadLocalRandom 提供 9 位熵(10 亿种可能),
+        // 1000 次循环碰撞概率 ~ exp(-0.0005) ≈ 0.05%,实际测试 1000 次不撞;
+        // 订单号总长 prefix(2) + date(8) + seq(9) = 19 字符,VARCHAR(30) 容量足够
+        long entropy = RANDOM.nextLong(0, 1_000_000_000L);
+        return String.format("%09d", entropy);
     }
 }
